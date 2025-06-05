@@ -508,6 +508,9 @@ export default function Pdf2zh({ className, _t, updateProps, onOpenPath, data, .
                           value={curModel}
                           onChange={(e) => {
                             setCurModel(e.target.value)
+                            if (e.target.value !== 'custom' && e.target.value !== '') {
+                              setConfig({ ...config, model: e.target.value })
+                            }
                           }}
                           className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
@@ -523,7 +526,7 @@ export default function Pdf2zh({ className, _t, updateProps, onOpenPath, data, .
                         {curModel === 'custom' && <Input
                           type="text"
                           value={config.model}
-                          onChange={(e) => setCurModel(e.target.value)}
+                          onChange={(e) => setConfig({ ...config, model: e.target.value })}
                           placeholder={t('或输入自定义模型名称')}
                           className="text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                         />}
