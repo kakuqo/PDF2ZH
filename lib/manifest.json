@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "version_name": "beta",
+  "title": "PDF2ZH",
+  "description": "PDF2ZH",
+  "pluginId": "PDF2ZH",
+  "category": "ai",
+  "main": "index.js",
+  "platforms": [
+    "win32",
+    "darwin"
+  ],
+  "arch": [
+    "arm64",
+    "x64"
+  ],
+  "link": "",
+  "icon": "",
+  "author": "Kakuqo",
+  "homepage": "",
+  "source": "",
+  "importType": "module",
+  "provider": {
+    "value": "PDF2ZH",
+    "label": "PDF2ZH"
+  },
+  "features": [
+    "translatePlugin"
+  ],
+  "configuration": []
+}
