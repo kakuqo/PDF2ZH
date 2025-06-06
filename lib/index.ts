@@ -4,19 +4,22 @@ import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { PDFDocument } from 'pdf-lib';
 interface translateConfig {
-    apiKey: string;
-    pluginId: string;
-    modelName?: string;
+    apiKey?: string;
+    provider: string;
+    model?: string;
     baseURL?: string;
+    prompt?: string;
+    customVars?: any[];
+    translators?: any[];
+    outputPath: string
 }
 
 interface translateOptions {
     filePath: string
-    outputPath: string
-    prompt?: string
     sourceLanguage: string
     targetLanguage: string
-    pages?: number[]
+    pages?: string; // 1,2,3-5,6,7-9
+    dirPath?: string; // 指定批量翻译目录路径
     onProgress?: (progress: { percentage: string; current: string; total: string; }) => void
 }
 
@@ -51,58 +54,63 @@ export default class Pdf2zhPlugin {
     }
 
     private getConfigJson(config: translateConfig, options: translateOptions) {
-        const translatorsMap: any = {
-            'GeminiAI': {
-                name: 'gemini',
-                envs: {
-                    'GEMINI_API_KEY': config.apiKey,
-                    'GEMINI_MODEL': config.modelName || 'gemini-1.5-flash'
-                }
-            },
-            'OllamaAI': {
-                name: 'ollama',
-                envs: {
-                    'OLLAMA_HOST': config.baseURL || 'http://localhost:11434',
-                    'OLLAMA_MODEL': config.modelName || 'gemma2'
-                }
-            },
-            'OpenAI': {
-                name: 'openai',
-                envs: {
-                    'OPENAI_BASE_URL': config.baseURL || 'https://api.openai.com/v1',
-                    'OPENAI_API_KEY': config.apiKey,
-                    'OPENAI_MODEL': config.modelName || 'gpt-4o'
-                }
-            },
-            'DeepLAI': {
-                name: 'deepl',
-                envs: {
-                    'DEEPL_AUTH_KEY': config.apiKey,
-                }
-            },
-            'DeepseekAI': {
-                name: 'deepseek',
-                envs: {
-                    'DEEPSEEK_API_KEY': config.apiKey,
-                    'DEEPSEEK_MODEL': config.modelName || 'deepseek-chat'
-                }
-            },
-            'SiliconflowAI': {
-                name: 'silicon',
-                envs: {
-                    'SILICON_API_KEY': config.apiKey,
-                    'SILICON_MODEL': config.modelName || 'Qwen/Qwen2.5-7B-Instruct'
-                }
-            },
-            'ZhipuAI': {
-                name: 'zhipu',
-                envs: {
-                    'ZHIPU_API_KEY': config.apiKey,
-                    'ZHIPU_MODEL': config.modelName || 'glm-4-flash'
-                }
-            }
-        }
-        const translators = translatorsMap[config.pluginId] ? [translatorsMap[config.pluginId]] : []
+        // const translatorsMap: any = {
+        //     'GeminiAI': {
+        //         name: 'gemini',
+        //         envs: {
+        //             'GEMINI_API_KEY': config.apiKey,
+        //             'GEMINI_MODEL': config.modelName || 'gemini-1.5-flash'
+        //         }
+        //     },
+        //     'OllamaAI': {
+        //         name: 'ollama',
+        //         envs: {
+        //             'OLLAMA_HOST': config.baseURL || 'http://localhost:11434',
+        //             'OLLAMA_MODEL': config.modelName || 'gemma2'
+        //         }
+        //     },
+        //     'OpenAI': {
+        //         name: 'openai',
+        //         envs: {
+        //             'OPENAI_BASE_URL': config.baseURL || 'https://api.openai.com/v1',
+        //             'OPENAI_API_KEY': config.apiKey,
+        //             'OPENAI_MODEL': config.modelName || 'gpt-4o'
+        //         }
+        //     },
+        //     'DeepLAI': {
+        //         name: 'deepl',
+        //         envs: {
+        //             'DEEPL_AUTH_KEY': config.apiKey,
+        //         }
+        //     },
+        //     'DeepseekAI': {
+        //         name: 'deepseek',
+        //         envs: {
+        //             'DEEPSEEK_API_KEY': config.apiKey,
+        //             'DEEPSEEK_MODEL': config.modelName || 'deepseek-chat'
+        //         }
+        //     },
+        //     'SiliconflowAI': {
+        //         name: 'silicon',
+        //         envs: {
+        //             'SILICON_API_KEY': config.apiKey,
+        //             'SILICON_MODEL': config.modelName || 'Qwen/Qwen2.5-7B-Instruct'
+        //         }
+        //     },
+        //     'ZhipuAI': {
+        //         name: 'zhipu',
+        //         envs: {
+        //             'ZHIPU_API_KEY': config.apiKey,
+        //             'ZHIPU_MODEL': config.modelName || 'glm-4-flash'
+        //         }
+        //     }
+        // }
+        // const translators = [{
+        //     name: options.provider,
+        //     envs: {
+        //         'GOOGLE_API_KEY': config.apiKey,
+        //     }
+        // }]
         const fontPath = this.getFontOptions(options.targetLanguage);
         const notoFontPath = path.resolve(__dirname, 'engine', 'fonts', fontPath);
         return {
@@ -110,7 +118,7 @@ export default class Pdf2zhPlugin {
             // "PDF2ZH_LANG_FROM": options.sourceLanguage || "English",
             // "PDF2ZH_LANG_TO": "Simplified Chinese",
             "NOTO_FONT_PATH": notoFontPath,
-            "translators": translators
+            "translators": config.translators
         }
     }
 
@@ -129,6 +137,11 @@ export default class Pdf2zhPlugin {
         // 将配置写入文件
         const configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(configJson, null, 2));
+        let promptPath = '';
+        if (config.prompt?.length) {
+            promptPath = path.join(__dirname, 'prompt.txt');
+            fs.writeFileSync(promptPath, config.prompt);
+        }
         console.log(`配置文件已保存到 ${configPath}`);
         console.log(path.resolve(__dirname))
 
@@ -145,7 +158,7 @@ export default class Pdf2zhPlugin {
         }
         // const pdf2zhPath = path.resolve(__dirname, 'engine', pdf2zhExecutable);
         const inputPdf = options.filePath;
-        const outputDir = options.outputPath;
+        const outputDir = config.outputPath;
         const langFrom = langsMap[options.sourceLanguage] || options.sourceLanguage || 'en';
         const langTo = langsMap[options.targetLanguage] || options.targetLanguage || 'zh-CN';
         const args = [
@@ -154,17 +167,23 @@ export default class Pdf2zhPlugin {
             '--lang-out', langTo,
             '--onnx', onnxPath,
             '--output', outputDir,
-            '--service', configJson.translators[0]?.name || 'google',
+            '--service', config.provider || 'google',
             '--config', configPath,
         ];
+        if (config.prompt?.length) {
+            args.push('--prompt', promptPath);
+        }
+
+        if (options.pages) {
+            args.push('--pages', options.pages);
+        }
+
+        if (options.dirPath) {
+            args.push('--dir', options.dirPath);
+        }
 
         // 打印所有关键路径
-        console.log('翻译参数', args)
-        console.log('pdf2zhPath:', pdf2zhPath);
-        console.log('onnxPath:', onnxPath);
-        console.log('inputPdf:', inputPdf);
-        console.log('outputPdf:', outputDir);
-        console.log('configPath:', configPath);
+        console.log('翻译参数', JSON.stringify(args))
 
         // 确保 pdf2zh 具有执行权限
         try {
@@ -226,8 +245,8 @@ export default class Pdf2zhPlugin {
                     console.log('PDF翻译完成');
                     if (pluginConfig.compare) {
                         const baseName = path.basename(options.filePath).replace('.pdf', '');
-                        const inputPdf = path.join(options.outputPath, `${baseName}-dual.pdf`);
-                        const outputPdf = path.join(options.outputPath, `${baseName}-compared.pdf`);
+                        const inputPdf = path.join(config.outputPath, `${baseName}-dual.pdf`);
+                        const outputPdf = path.join(config.outputPath, `${baseName}-compared.pdf`);
                         await mergePagesideBySide(inputPdf, outputPdf);
                     }
                     resolve();
