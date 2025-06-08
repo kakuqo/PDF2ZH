@@ -130,7 +130,7 @@ export default function Pdf2zh({ className, _t, updateProps, onOpenPath, data, i
   // 状态管理
   const [ollamaModels, setOllamaModels] = useState<string[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
-  const [curProvider, setCurProvider] = useState(data?.customVars?.length > 0 ? 'custom' : data?.provider || '')
+  const [curProvider, setCurProvider] = useState((data?.customVars) ? 'custom' : data?.provider || 'google')
   const [curModel, setCurModel] = useState(data?.model || '')
   const [showDefaultPrompt, setShowDefaultPrompt] = useState(false)
   // const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -309,25 +309,42 @@ export default function Pdf2zh({ className, _t, updateProps, onOpenPath, data, i
       model: curModel === 'custom' ? config.model : curModel
     }
     let translators: any[] = []
-    if (finalConfig.customVars?.length > 0) {
+    if (curProvider === 'custom') {//自定义配置
       let envs: any = {}
       finalConfig.customVars.forEach((item: any) => {
-        envs[item.key] = item.value
+        if (item.value) {
+          envs[item.key] = item.value
+        }
       })
-      translators = [{
-        name: finalConfig.provider,
-        envs
-      }]
+      if (Object.keys(envs).length > 0) {
+        translators = [{
+          name: finalConfig.provider,
+          envs
+        }]
+      } else {
+        translators = []
+      }
     } else if (providerVars[finalConfig.provider as keyof typeof providerVars]) {
       const customVars: any = providerVars[finalConfig.provider as keyof typeof providerVars]
       let envs: any = {}
       for (const key in customVars) {
-        envs[customVars[key]] = finalConfig[key]
+        if (finalConfig[key]) {
+          envs[customVars[key]] = finalConfig[key]
+        }
       }
-      translators = [{
-        name: finalConfig.provider,
-        envs
-      }]
+      if (Object.keys(envs).length > 0) {
+        translators = [{
+          name: finalConfig.provider,
+          envs
+        }]
+      } else {
+        translators = []
+      }
+      delete finalConfig.customVars
+      console.log('delete customVars:', finalConfig)
+    } else {
+      delete finalConfig.customVars
+      console.log('delete customVars:', finalConfig)
     }
     finalConfig.translators = translators
     console.log('保存配置:', finalConfig)

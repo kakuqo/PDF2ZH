@@ -135,14 +135,14 @@ export default class Pdf2zhPlugin {
         }
 
         // 将配置写入文件
-        const configPath = path.join(__dirname, 'config.json');
+        let configPath = path.join(__dirname, 'config.json');
         fs.writeFileSync(configPath, JSON.stringify(configJson, null, 2));
+        console.log(`配置文件已保存到 ${configPath}`);
         let promptPath = '';
         if (config.prompt?.length) {
             promptPath = path.join(__dirname, 'prompt.txt');
             fs.writeFileSync(promptPath, config.prompt);
         }
-        console.log(`配置文件已保存到 ${configPath}`);
         console.log(path.resolve(__dirname))
 
         // 组装pdf2zh命令参数
@@ -150,8 +150,7 @@ export default class Pdf2zhPlugin {
         let pdf2zhPath = '';
         let onnxPath = '';
         if (process.platform === 'win32') {
-            pdf2zhPath = path.resolve(__dirname, 'pdf2zh.py');
-            onnxPath = path.resolve(__dirname, 'engine', 'doclayout.py');
+            pdf2zhPath = path.resolve(__dirname, 'engine', 'build', 'pdf2zh.exe');
         } else {
             pdf2zhPath = path.resolve(__dirname, 'engine', 'pdf2zh');
             onnxPath = path.resolve(__dirname, 'engine', 'models', 'doclayout.onnx');
@@ -159,17 +158,28 @@ export default class Pdf2zhPlugin {
         // const pdf2zhPath = path.resolve(__dirname, 'engine', pdf2zhExecutable);
         const inputPdf = options.filePath;
         const outputDir = config.outputPath;
-        const langFrom = langsMap[options.sourceLanguage] || options.sourceLanguage || 'en';
-        const langTo = langsMap[options.targetLanguage] || options.targetLanguage || 'zh-CN';
+        fs.mkdirSync(outputDir, { recursive: true });
+        let langFrom = langsMap[options.sourceLanguage] || options.sourceLanguage || 'en';
+        let langTo = langsMap[options.targetLanguage] || options.targetLanguage || 'zh';
+        if (langFrom === 'zh-CN') {
+            langFrom = 'zh';
+        }
+        if (langTo === 'zh-CN') {
+            langTo = 'zh';
+        }
         const args = [
             inputPdf,
-            '--lang-in', langFrom,
-            '--lang-out', langTo,
-            '--onnx', onnxPath,
-            '--output', outputDir,
-            '--service', config.provider || 'google',
-            '--config', configPath,
+            '-li', langFrom,
+            '-lo', langTo,
+            '-o', outputDir,
+            '-s', config.provider || 'google',
         ];
+        if (configPath) {
+            args.push('--config', configPath);
+        }
+        if (onnxPath) {
+            args.push('--onnx', onnxPath);
+        }
         if (config.prompt?.length) {
             args.push('--prompt', promptPath);
         }

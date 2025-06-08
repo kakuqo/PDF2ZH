@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 // 获取项目根目录
 const projectRoot = path.join(__dirname, '..');
-const bucketDomain = 'https://github.com/kakuqo/pemo-pdf2zh/releases/'
+const bucketDomain = 'https://github.com/kakuqo/pemo-pdf2zh/releases/download'
 
 // 根据平台拷贝engine文件夹
 function copyEngineByPlatform(platform) {
@@ -107,7 +107,7 @@ async function buildPlugin(pluginPath) {
 }
 
 // 清理旧的打包文件
-function cleanOldPackages(pluginName) {
+function cleanOldPackages(pluginName, platform) {
     const outputDir = path.join(projectRoot, 'output');
     if (!fs.existsSync(outputDir)) {
         return;
@@ -115,7 +115,7 @@ function cleanOldPackages(pluginName) {
 
     const files = fs.readdirSync(outputDir);
     for (const file of files) {
-        if (file.endsWith('.pemox') && file.startsWith(pluginName)) {
+        if (file.endsWith(`${platform}.pemox`) && file.startsWith(pluginName)) {
             const filePath = path.join(outputDir, file);
             fs.unlinkSync(filePath);
             console.log(`已删除旧的包文件: ${file}`);
@@ -163,7 +163,7 @@ async function packagePlugin(platform) {
     }
 
     // 清理旧的插件包
-    cleanOldPackages(displayName);
+    cleanOldPackages(displayName, platform);
 
     try {
         // 先构建 components 项目
@@ -218,7 +218,7 @@ async function packagePlugin(platform) {
                 
                 // 复制图标文件
                 const ogIcon = path.join(distPath, 'icon.png');
-                const destIcon = path.join(outputDir, `${displayName}-${platform}.png`);
+                const destIcon = path.join(outputDir, `${displayName}.png`);
                 if (fs.existsSync(ogIcon)) {
                     fs.copyFileSync(ogIcon, destIcon);
                 }
@@ -252,36 +252,29 @@ async function packagePlugin(platform) {
             try {
                 const manifestContent = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
                 // 只保留基本字段
-                const basicInfo = {
+                let basicInfo = {
                     ...manifestContent,
-                    fileHash: fileHash,
-                    link: `${bucketDomain}/${manifestContent.pluginId}@${manifestContent.version}-${platform}.pemox`,
-                    icon: `${bucketDomain}/${manifestContent.pluginId}-${platform}.png`,
+                    icon: `${bucketDomain}/v${manifestContent.version}/${manifestContent.pluginId}.png`,
                     platform: platform
                 };
-
+                if (platform === 'win') {
+                    basicInfo.winLink = `${bucketDomain}/v${manifestContent.version}/${manifestContent.pluginId}@${manifestContent.version}-win.pemox`;
+                    basicInfo.winFileHash = fileHash;
+                } else if (platform === 'mac') {
+                    basicInfo.macLink = `${bucketDomain}/v${manifestContent.version}/${manifestContent.pluginId}@${manifestContent.version}-mac.pemox`;
+                    basicInfo.macFileHash = fileHash;
+                }
                 const fileInfoPath = path.join(outputDir, 'fileInfo.json');
-                let existingManifests = [];
-                
-                // 读取现有的 fileInfo.json（如果存在）
                 if (fs.existsSync(fileInfoPath)) {
-                    try {
-                        existingManifests = JSON.parse(fs.readFileSync(fileInfoPath, 'utf8'));
-                    } catch (error) {
-                        console.error('读取现有 fileInfo.json 错误:', error.message);
+                    const existingInfo = JSON.parse(fs.readFileSync(fileInfoPath, 'utf8'));
+                    if (existingInfo.pluginId === basicInfo.pluginId) {
+                        basicInfo = {
+                            ...existingInfo,
+                            ...basicInfo,
+                        }
                     }
                 }
-
-                // 更新或添加新的插件信息
-                const pluginId = `${basicInfo.pluginId}-${platform}`;
-                const index = existingManifests.findIndex(m => m.pluginId === pluginId);
-                if (index !== -1) {
-                    existingManifests[index] = { ...basicInfo, pluginId };
-                } else {
-                    existingManifests.push({ ...basicInfo, pluginId });
-                }
-
-                fs.writeFileSync(fileInfoPath, JSON.stringify(existingManifests, null, 2));
+                fs.writeFileSync(fileInfoPath, JSON.stringify(basicInfo, null, 2));
                 console.log('\n已更新 fileInfo.json 文件');
             } catch (error) {
                 console.error('更新 fileInfo.json 失败:', error.message);
