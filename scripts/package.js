@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 // 获取项目根目录
 const projectRoot = path.join(__dirname, '..');
-const bucketDomain = 'https://github.com/kakuqo/pemo-pdf2zh/releases/download'
+const bucketDomain = 'https://github.com/kakuqo/PDF2ZH/releases/download'
 
 // 根据平台拷贝engine文件夹
 function copyEngineByPlatform(platform) {
