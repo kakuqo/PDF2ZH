@@ -3,22 +3,116 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { PDFDocument } from 'pdf-lib';
-interface translateConfig {
-    apiKey?: string;
-    provider: string;
-    model?: string;
-    baseURL?: string;
-    prompt?: string;
-    customVars?: any[];
-    translators?: any[];
-    outputPath: string
+
+// 第一个对象：保存环境变量名（类似示例代码）
+const providerVars = {
+    deepl: {
+        apiKey: 'DEEPL_AUTH_KEY',
+    },
+    ollama: {
+        baseUrl: 'OLLAMA_HOST',
+        model: 'OLLAMA_MODEL',
+        numPredict: 'NUM_PREDICT',
+    },
+    openai: {
+        baseUrl: 'OPENAI_BASE_URL',
+        apiKey: 'OPENAI_API_KEY',
+        model: 'OPENAI_MODEL',
+    },
+    zhipu: {
+        apiKey: 'ZHIPU_API_KEY',
+        model: 'ZHIPU_MODEL',
+    },
+    siliconflow: {
+        baseUrl: 'SILICONFLOW_BASE_URL',
+        model: 'SILICONFLOW_MODEL',
+        apiKey: 'SILICONFLOW_API_KEY',
+    },
+    grok: {
+        apiKey: 'GROK_API_KEY',
+        model: 'GROK_MODEL',
+    },
+    deepseek: {
+        apiKey: 'DEEPSEEK_API_KEY',
+        model: 'DEEPSEEK_MODEL',
+    },
+    xinference: {
+        model: 'XINFERENCE_MODEL',
+        host: 'XINFERENCE_HOST',
+    },
+    azureopenai: {
+        model: 'AZURE_OPENAI_MODEL',
+        baseUrl: 'AZURE_OPENAI_BASE_URL',
+        apiKey: 'AZURE_OPENAI_API_KEY',
+        apiVersion: 'AZURE_OPENAI_API_VERSION',
+    },
+    modelscope: {
+        model: 'MODELSCOPE_MODEL',
+        apiKey: 'MODELSCOPE_API_KEY',
+    }
+}
+
+// 第二个对象：保存命令行参数名
+const providerCommandVars = {
+    deepl: {
+        apiKey: '--deepl-auth-key',
+    },
+    ollama: {
+        baseUrl: '--ollama-host',
+        model: '--ollama-model',
+        numPredict: '--num-predict',
+    },
+    openai: {
+        baseUrl: '--openai-base-url',
+        apiKey: '--openai-api-key',
+        model: '--openai-model',
+    },
+    zhipu: {
+        apiKey: '--zhipu-api-key',
+        model: '--zhipu-model',
+    },
+    siliconflow: {
+        baseUrl: '--siliconflow-base-url',
+        model: '--siliconflow-model',
+        apiKey: '--siliconflow-api-key',
+    },
+    grok: {
+        apiKey: '--grok-api-key',
+        model: '--grok-model',
+    },
+    deepseek: {
+        apiKey: '--deepseek-api-key',
+        model: '--deepseek-model',
+    },
+    xinference: {
+        model: '--xinference-model',
+        host: '--xinference-host',
+    },
+    azureopenai: {
+        model: '--azure-openai-model',
+        baseUrl: '--azure-openai-base-url',
+        apiKey: '--azure-openai-api-key',
+        apiVersion: '--azure-openai-api-version',
+    },
+    modelscope: {
+        model: '--modelscope-model',
+        apiKey: '--modelscope-api-key',
+    },
 }
 
 interface translateOptions {
     filePath: string
-    sourceLanguage: string
-    targetLanguage: string
-    pages?: string; // 1,2,3-5,6,7-9
+    sourceLang: string,
+    targetLang: string,
+    translatePlugin: string,
+    translateId: string,
+    pageRange?: string, // 1,2,3-5,6,7-9
+    prompt?: string,
+    outputPath: string,
+    model?: string,
+    provider: string,
+    translators?: any[]
+    compare?: boolean,
     dirPath?: string; // 指定批量翻译目录路径
     onProgress?: (progress: { percentage: string; current: string; total: string; }) => void
 }
@@ -53,81 +147,25 @@ export default class Pdf2zhPlugin {
         return fontOptions[lang] || 'GoNotoKurrent-Regular.ttf';
     }
 
-    private getConfigJson(config: translateConfig, options: translateOptions) {
-        // const translatorsMap: any = {
-        //     'GeminiAI': {
-        //         name: 'gemini',
-        //         envs: {
-        //             'GEMINI_API_KEY': config.apiKey,
-        //             'GEMINI_MODEL': config.modelName || 'gemini-1.5-flash'
-        //         }
-        //     },
-        //     'OllamaAI': {
-        //         name: 'ollama',
-        //         envs: {
-        //             'OLLAMA_HOST': config.baseURL || 'http://localhost:11434',
-        //             'OLLAMA_MODEL': config.modelName || 'gemma2'
-        //         }
-        //     },
-        //     'OpenAI': {
-        //         name: 'openai',
-        //         envs: {
-        //             'OPENAI_BASE_URL': config.baseURL || 'https://api.openai.com/v1',
-        //             'OPENAI_API_KEY': config.apiKey,
-        //             'OPENAI_MODEL': config.modelName || 'gpt-4o'
-        //         }
-        //     },
-        //     'DeepLAI': {
-        //         name: 'deepl',
-        //         envs: {
-        //             'DEEPL_AUTH_KEY': config.apiKey,
-        //         }
-        //     },
-        //     'DeepseekAI': {
-        //         name: 'deepseek',
-        //         envs: {
-        //             'DEEPSEEK_API_KEY': config.apiKey,
-        //             'DEEPSEEK_MODEL': config.modelName || 'deepseek-chat'
-        //         }
-        //     },
-        //     'SiliconflowAI': {
-        //         name: 'silicon',
-        //         envs: {
-        //             'SILICON_API_KEY': config.apiKey,
-        //             'SILICON_MODEL': config.modelName || 'Qwen/Qwen2.5-7B-Instruct'
-        //         }
-        //     },
-        //     'ZhipuAI': {
-        //         name: 'zhipu',
-        //         envs: {
-        //             'ZHIPU_API_KEY': config.apiKey,
-        //             'ZHIPU_MODEL': config.modelName || 'glm-4-flash'
-        //         }
-        //     }
-        // }
-        // const translators = [{
-        //     name: options.provider,
-        //     envs: {
-        //         'GOOGLE_API_KEY': config.apiKey,
-        //     }
-        // }]
-        const fontPath = this.getFontOptions(options.targetLanguage);
-        const notoFontPath = path.resolve(__dirname, 'engine', 'fonts', fontPath);
-        return {
-            "USE_MODELSCOPE": "0",
-            // "PDF2ZH_LANG_FROM": options.sourceLanguage || "English",
-            // "PDF2ZH_LANG_TO": "Simplified Chinese",
-            "NOTO_FONT_PATH": notoFontPath,
-            "translators": config.translators
-        }
-    }
+    // private getConfigJson(options: translateOptions) {
 
-    public async translate(config: translateConfig, options: translateOptions, pluginConfig: pluginConfig) {
+    //     const fontPath = this.getFontOptions(options.targetLang);
+    //     const notoFontPath = path.resolve(__dirname, 'engine', 'fonts', fontPath);
+    //     return {
+    //         "USE_MODELSCOPE": "0",
+    //         // "PDF2ZH_LANG_FROM": options.sourceLanguage || "English",
+    //         // "PDF2ZH_LANG_TO": "Simplified Chinese",
+    //         "NOTO_FONT_PATH": notoFontPath,
+    //         "translators": options.translators
+    //     }
+    // }
+
+    public async translate(options: translateOptions) {
         // 重置取消标志
         this.isCancelled = false;
-        
-        console.log('translate', config)
-        const configJson = this.getConfigJson(config, options)
+
+        console.log('translate', options)
+        // const configJson = this.getConfigJson(options)
 
         // 检查是否已被取消
         if (this.isCancelled) {
@@ -135,32 +173,32 @@ export default class Pdf2zhPlugin {
         }
 
         // 将配置写入文件
-        let configPath = path.join(__dirname, 'config.json');
-        fs.writeFileSync(configPath, JSON.stringify(configJson, null, 2));
-        console.log(`配置文件已保存到 ${configPath}`);
-        let promptPath = '';
-        if (config.prompt?.length) {
-            promptPath = path.join(__dirname, 'prompt.txt');
-            fs.writeFileSync(promptPath, config.prompt);
-        }
-        console.log(path.resolve(__dirname))
+        // let configPath = path.join(__dirname, 'config.json');
+        // fs.writeFileSync(configPath, JSON.stringify(configJson, null, 2));
+        // console.log(`配置文件已保存到 ${configPath}`);
+        // let promptPath = '';
+        // if (options.prompt?.length) {
+        //     promptPath = path.join(__dirname, 'prompt.txt');
+        //     fs.writeFileSync(promptPath, options.prompt);
+        // }
+        // console.log(path.resolve(__dirname))
 
         // 组装pdf2zh命令参数
         // 根据平台选择不同的可执行文件
         let pdf2zhPath = '';
-        let onnxPath = '';
+        let restorePath = '';
         if (process.platform === 'win32') {
             pdf2zhPath = path.resolve(__dirname, 'engine', 'build', 'pdf2zh.exe');
         } else {
-            pdf2zhPath = path.resolve(__dirname, 'engine', 'pdf2zh');
-            onnxPath = path.resolve(__dirname, 'engine', 'models', 'doclayout.onnx');
+            pdf2zhPath = path.resolve(__dirname, 'pdf2zh_next', 'pdf2zh');
+            restorePath = path.resolve(__dirname, 'pdf2zh_next', 'offline_assets.zip');
         }
         // const pdf2zhPath = path.resolve(__dirname, 'engine', pdf2zhExecutable);
         const inputPdf = options.filePath;
-        const outputDir = config.outputPath;
+        const outputDir = options.outputPath;
         fs.mkdirSync(outputDir, { recursive: true });
-        let langFrom = langsMap[options.sourceLanguage] || options.sourceLanguage || 'en';
-        let langTo = langsMap[options.targetLanguage] || options.targetLanguage || 'zh';
+        let langFrom = langsMap[options.sourceLang] || options.sourceLang || 'en';
+        let langTo = langsMap[options.targetLang] || options.targetLang || 'zh';
         if (langFrom === 'zh-CN') {
             langFrom = 'zh';
         }
@@ -169,27 +207,28 @@ export default class Pdf2zhPlugin {
         }
         const args = [
             inputPdf,
-            '-li', langFrom,
-            '-lo', langTo,
-            '-o', outputDir,
-            '-s', config.provider || 'google',
+            '--lang-in', langFrom,
+            '--lang-out', langTo,
+            '--output', outputDir,
+            `--${options.provider}`
         ];
-        if (configPath) {
-            args.push('--config', configPath);
+        let commandsKey = providerCommandVars[options.provider as keyof typeof providerCommandVars];
+        if (commandsKey) {
+            for (const key in commandsKey) {
+                if (options[key as keyof translateOptions]) {
+                    args.push(commandsKey[key as keyof typeof commandsKey], options[key as keyof translateOptions]);
+                }
+            }
         }
-        if (onnxPath) {
-            args.push('--onnx', onnxPath);
+        if (restorePath) {
+            args.push('--restore-offline-assets', restorePath);
         }
-        if (config.prompt?.length) {
-            args.push('--prompt', promptPath);
+        if (options.prompt?.length) {
+            args.push('--custom-system-prompt', options.prompt);
         }
 
-        if (options.pages) {
-            args.push('--pages', options.pages);
-        }
-
-        if (options.dirPath) {
-            args.push('--dir', options.dirPath);
+        if (options.pageRange) {
+            args.push('--pages', options.pageRange);
         }
 
         // 打印所有关键路径
@@ -197,10 +236,24 @@ export default class Pdf2zhPlugin {
 
         // 确保 pdf2zh 具有执行权限
         try {
+            // 检查文件是否存在
+            if (!fs.existsSync(pdf2zhPath)) {
+                throw new Error(`可执行文件不存在: ${pdf2zhPath}`);
+            }
+
+            // 检查文件权限
+            const stats = fs.statSync(pdf2zhPath);
+            console.log('文件权限:', stats.mode.toString(8));
+
             await promisify(fs.chmod)(pdf2zhPath, '755');
             console.log('已添加执行权限到', pdf2zhPath);
+
+            // 再次检查权限
+            const newStats = fs.statSync(pdf2zhPath);
+            console.log('更新后文件权限:', newStats.mode.toString(8));
         } catch (error) {
-            console.error('添加执行权限失败:', error);
+            console.error('文件权限处理失败:', error);
+            throw error;
         }
 
         // 在启动进程前再次检查是否已被取消
@@ -208,8 +261,46 @@ export default class Pdf2zhPlugin {
             throw new Error('翻译已被取消');
         }
 
-        return new Promise<void>((resolve, reject) => {
-            this.currentProcess = spawn(pdf2zhPath, args);
+        return new Promise<{
+            dualPath: string,
+            monoPath: string,
+        }>((resolve, reject) => {
+            // 添加调试信息
+            console.log('执行命令:', pdf2zhPath);
+            console.log('命令参数:', args);
+            console.log('工作目录:', process.cwd());
+            console.log('当前环境变量 PATH:', process.env.PATH);
+
+            // 配置 spawn 选项
+            const spawnOptions = {
+                stdio: ['inherit', 'pipe', 'pipe'] as ['inherit', 'pipe', 'pipe'],
+                cwd: process.cwd(), // 明确设置工作目录
+                env: {
+                    ...process.env, // 继承所有环境变量
+                    // 如果需要特定的环境变量，可以在这里添加
+                }
+            };
+
+            this.currentProcess = spawn(pdf2zhPath, args, spawnOptions);
+
+            // 立即检查进程是否启动成功
+            if (!this.currentProcess.pid) {
+                reject(new Error('进程启动失败'));
+                return;
+            }
+            console.log('进程已启动，PID:', this.currentProcess.pid);
+
+            // 设置进程启动超时检测
+            const startTimeout = setTimeout(() => {
+                console.log('进程启动超时，可能已挂起');
+            }, 5000); // 5秒超时
+
+            // 监听标准输出（之前缺少这个）
+            this.currentProcess.stdout?.on('data', (data: Buffer) => {
+                clearTimeout(startTimeout); // 有输出说明进程正常工作
+                const output = data.toString();
+                console.log('stdout:', output);
+            });
 
             // 监听标准错误
             this.currentProcess.stderr?.on('data', (data: Buffer) => {
@@ -219,7 +310,9 @@ export default class Pdf2zhPlugin {
                     this.isCancelled = false;
                     return;
                 }
+                clearTimeout(startTimeout); // 有输出说明进程正常工作
                 const output = data.toString();
+                console.log('stderr:', output); // 添加标识以便区分
                 // 匹配类似 "0%|          | 0/1 [00:00<?, ?it/s]" 的格式
                 const pageMatch = output.match(/\|\s*(\d+)\/(\d+)\s*\[/);
                 let currentPage;
@@ -249,30 +342,43 @@ export default class Pdf2zhPlugin {
             });
 
             this.currentProcess.on('close', async (code: number | null) => {
+                clearTimeout(startTimeout);
                 this.currentProcess = null;
                 this.isCancelled = false;
+                console.log('进程退出，退出码:', code);
                 if (code === 0) {
                     console.log('PDF翻译完成');
-                    if (pluginConfig.compare) {
-                        const baseName = path.basename(options.filePath).replace('.pdf', '');
-                        const inputPdf = path.join(config.outputPath, `${baseName}-dual.pdf`);
-                        const outputPdf = path.join(config.outputPath, `${baseName}-compared.pdf`);
-                        await mergePagesideBySide(inputPdf, outputPdf);
-                    }
-                    resolve();
+                    const baseName = path.basename(options.filePath).replace('.pdf', '');
+                    // if (options.compare) {
+                    //     const inputPdf = path.join(options.outputPath, `${baseName}.${langTo}.dual.pdf`);
+                    //     const outputPdf = path.join(options.outputPath, `${baseName}-compared.pdf`);
+                    //     try {
+                    //         await mergePagesideBySide(inputPdf, outputPdf);
+                    //     } catch (error) {
+                    //         console.error('合并页面失败:', error);
+                    //         reject(new Error('合并页面失败'));
+                    //     }
+                    // }
+                    resolve({
+                        dualPath: path.join(options.outputPath, `${baseName}.${langTo}.dual.pdf`),
+                        monoPath: path.join(options.outputPath, `${baseName}.${langTo}.mono.pdf`),
+                    });
                 } else {
                     const codeMessage = code === null ? '进程被信号终止' : `错误码: ${code}`;
-                    console.log('翻译进程退出', codeMessage);
+                    console.log('翻译进程异常退出:', codeMessage);
                     // 检查输出文件是否存在
-                    const outputExists = fs.existsSync(outputDir);
-                    console.log(`输出文件夹${outputExists ? '存在' : '不存在'}: ${outputDir}`);
+                    const outputExists = fs.existsSync(options.outputPath);
+                    console.log(`输出文件夹${outputExists ? '存在' : '不存在'}: ${options.outputPath}`);
                     reject(new Error(`pdf2zh 进程退出，${codeMessage}`));
                 }
             });
+
             this.currentProcess.on('error', (err: Error) => {
+                clearTimeout(startTimeout);
                 this.currentProcess = null;
                 this.isCancelled = false;
-                console.log('翻译错误', err);
+                console.log('进程启动错误:', err.message);
+                console.log('错误详情:', err);
                 reject(err);
             });
         });
@@ -281,7 +387,7 @@ export default class Pdf2zhPlugin {
     public cancelRequest() {
         // 设置取消标志
         this.isCancelled = true;
-        
+
         if (this.currentProcess) {
             this.currentProcess.kill();
             this.currentProcess = null;

@@ -38,6 +38,7 @@ yarn.lock
 # 忽略engine相关目录
 engine/
 engine-window/
+pdf2zh_next/
 
 # Node.js
 node_modules/

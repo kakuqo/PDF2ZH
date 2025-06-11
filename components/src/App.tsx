@@ -1,4 +1,4 @@
-import MemoComponents from "./lib"
+import MemoComponents, { Panel } from "./lib"
 import "./globals.css"
 import { useState } from "react"
 
@@ -14,10 +14,10 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <MemoComponents 
-        updateProps={(key: string, value: any) => handleChange('pdf2zh', value)} 
-        data={data} 
+        updateData={(value: any) => handleChange('pdf2zh', value)} 
+        
       />
-      
+      <Panel />
       <div className="mt-8 max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow p-4">
           <h3 className="text-lg font-medium mb-2">组件状态</h3>

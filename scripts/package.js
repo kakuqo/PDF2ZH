@@ -19,7 +19,7 @@ const bucketDomain = 'https://github.com/kakuqo/PDF2ZH/releases/download'
 // 根据平台拷贝engine文件夹
 function copyEngineByPlatform(platform) {
     const distPath = path.join(projectRoot, 'dist');
-    const engineDistPath = path.join(distPath, 'engine');
+    const engineDistPath = path.join(distPath, 'pdf2zh_next');
     
     // 确保dist目录存在
     if (!fs.existsSync(distPath)) {
@@ -37,7 +37,7 @@ function copyEngineByPlatform(platform) {
         sourcePath = path.join(projectRoot, 'engine-window');
         console.log('正在拷贝Windows引擎文件...');
     } else if (platform === 'mac') {
-        sourcePath = path.join(projectRoot, 'engine');
+        sourcePath = path.join(projectRoot, 'pdf2zh_next');
         console.log('正在拷贝Mac引擎文件...');
     } else {
         console.error('无效的平台参数。请使用 --platform win 或 --platform mac');
