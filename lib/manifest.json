@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "version_name": "beta",
   "title": "PDF2ZH",
-  "description": "PDF2ZH",
+  "description": "一个强大的PDF文档翻译插件，支持恢复pdf版式、多种AI服务提供商和多种语言翻译。",
   "pluginId": "PDF2ZH",
   "category": "ai",
   "main": "index.js",
