@@ -327,8 +327,8 @@ export default class Pdf2zhPlugin {
                 // 重置超时计时器
                 resetTimeout();
                 const jsonArray = extractJsonObjects(output);
-                console.log('jsonArray', JSON.stringify(jsonArray, null, 2));
                 if (jsonArray?.length) {
+                    console.log('jsonArray', JSON.stringify(jsonArray, null, 2));
                     const jsonObjects = jsonArray[0];
                     options.onProgress?.({
                         state: jsonObjects.state == 'Save PDF' ? '1' : '0',
