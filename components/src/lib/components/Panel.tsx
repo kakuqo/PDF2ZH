@@ -40,10 +40,10 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
   const [targetLang, setTargetLang] = useState('zh_cn')
   const [sourceLang, setSourceLang] = useState('en')
   const [pageRange, setPageRange] = useState('')
-  const [selectedService, setSelectedService] = useState(pluginConfig?.provider || '')
-  const [selectedModel, setSelectedModel] = useState(pluginConfig?.model || '')
+  const [selectedService, setSelectedService] = useState('')
+  const [selectedModel, setSelectedModel] = useState('')
   const [isTranslating, setIsTranslating] = useState(false)
-  const [currentModel, setCurrentModel] = useState<string>(`${pluginConfig?.model}|${pluginConfig?.provider}`)
+  const [currentModel, setCurrentModel] = useState<string>('')
   const [serviceList, setServiceList] = useState<ServiceConfig[]>([])
 
   const selectModel = (model: string, provider: string) => {
@@ -58,7 +58,7 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
         name: 'Google Translate',
         provider: 'google',
       }]
-      setServiceList(list.map((item: any) => {
+      setServiceList(list.filter((item: any) => item.provider !== 'Ollama').map((item: any) => {
         return {
           name: item.name,
           provider: item.provider,
@@ -66,6 +66,13 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
         }
       }))
       initServiceList(list)
+      setSelectedService(pluginConfig?.provider || 'google')
+      setSelectedModel(pluginConfig?.model || '')
+      if (pluginConfig?.model?.length > 0 && pluginConfig?.provider?.length > 0) {
+        setCurrentModel(`${pluginConfig?.model}|${pluginConfig?.provider}`)
+      } else {
+        setCurrentModel(`''|${pluginConfig?.provider || 'google'}`)
+      }
     }
   }, [pluginConfig])
 
@@ -229,6 +236,7 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
             {t('选择服务')}
           </label>
           <Select value={currentModel} onValueChange={(value) => {
+            console.log('provider', value)
             const [modelValue, groupValue] = value.split('|');
             selectModel(modelValue, groupValue);
             setCurrentModel(value)
