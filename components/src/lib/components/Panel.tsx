@@ -335,7 +335,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
               <SelectTrigger>
                 <SelectValue placeholder={t(targetLang)} />
               </SelectTrigger>
-              <SelectContent className="bg-background">
+              <SelectContent className="bg-background max-h-[400px] overflow-y-auto">
                 {translateLangs?.map((lang) => (
                   <SelectItem key={lang.value} value={lang.value}>
                     {lang.label}
@@ -353,7 +353,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
               <SelectTrigger>
                 <SelectValue placeholder={t(sourceLang)} />
               </SelectTrigger>
-              <SelectContent className="bg-background">
+              <SelectContent className="bg-background max-h-[400px] overflow-y-auto">
                 {translateLangs?.map((lang) => (
                   <SelectItem key={lang.value} value={lang.value}>
                     {lang.label}

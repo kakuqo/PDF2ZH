@@ -371,16 +371,6 @@ export default class Pdf2zhPlugin {
                     if (code === 0) {
                         console.log('PDF翻译完成');
                         const baseName = path.basename(options.filePath).replace('.pdf', '');
-                        // if (options.compare) {
-                        //     const inputPdf = path.join(options.outputPath, `${baseName}.${langTo}.dual.pdf`);
-                        //     const outputPdf = path.join(options.outputPath, `${baseName}-compared.pdf`);
-                        //     try {
-                        //         await mergePagesideBySide(inputPdf, outputPdf);
-                        //     } catch (error) {
-                        //         console.error('合并页面失败:', error);
-                        //         reject(new Error('合并页面失败'));
-                        //     }
-                        // }
                         resolve({
                             dualPath: path.join(options.outputPath, `${baseName}.${langTo}.dual.pdf`),
                             monoPath: path.join(options.outputPath, `${baseName}.${langTo}.mono.pdf`),
@@ -389,9 +379,9 @@ export default class Pdf2zhPlugin {
                         const codeMessage = code === null ? '进程被信号终止' : `错误码: ${code}`;
                         console.log('翻译进程异常退出:', codeMessage);
                         // 检查输出文件是否存在
-                        const outputExists = fs.existsSync(options.outputPath);
-                        console.log(`输出文件夹${outputExists ? '存在' : '不存在'}: ${options.outputPath}`);
-                        reject(new Error(`pdf2zh 进程退出，${codeMessage}`));
+                        // const outputExists = fs.existsSync(options.outputPath);
+                        // console.log(`输出文件夹${outputExists ? '存在' : '不存在'}: ${options.outputPath}`);
+                        // reject(new Error(`pdf2zh 进程退出，${codeMessage}`));
                     }
                 });
 
