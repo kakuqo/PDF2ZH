@@ -9,7 +9,7 @@ export default defineConfig({
   format: ['cjs'],
   external: ['react', 'react-dom'],
   target: 'node16',
-  noExternal: ['pdf-lib'],
+  noExternal: ['tree-kill'],
   esbuildOptions: (options) => {
     options.jsx = 'automatic'
   }
