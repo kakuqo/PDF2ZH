@@ -34,7 +34,7 @@ function copyEngineByPlatform(platform) {
     
     let sourcePath;
     if (platform === 'win') {
-        sourcePath = path.join(projectRoot, 'engine-window');
+        sourcePath = path.join(projectRoot, 'pdf2zh_next_window');
         console.log('正在拷贝Windows引擎文件...');
     } else if (platform === 'mac') {
         sourcePath = path.join(projectRoot, 'pdf2zh_next');

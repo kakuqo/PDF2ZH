@@ -22,6 +22,9 @@ export const locales: Locales = {
     '配置保存成功': '配置保存成功',
     '保存失败，请稍后重试': '保存失败，请稍后重试',
     '配置已重置': '配置已重置',
+    // 新增的提示文本
+    '使用限制': '使用限制',
+    '本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。': '本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。',
     
     // 主要功能标题
     '输出路径配置': '输出路径配置',
@@ -288,6 +291,9 @@ export const locales: Locales = {
     '配置保存成功': 'Configuration saved successfully',
     '保存失败，请稍后重试': 'Save failed, please try again later',
     '配置已重置': 'Configuration reset',
+    // 新增的提示文本
+    '使用限制': 'Usage Limitations',
+    '本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。': 'This tool currently does not support translation of image-based PDFs. If your PDF document is scanned or image-based, please convert it to a text-based PDF using an OCR tool before translation.',
     
     // Main Function Titles
     '输出路径配置': 'Output Path Configuration',
@@ -418,9 +424,9 @@ export const locales: Locales = {
     '添加变量': '変数を追加',
     '删除': '削除',
     '可选': 'オプション',
-    '配置保存成功': '設定を保存しました',
-    '保存失败，请稍后重试': '保存に失敗しました。後でもう一度お試しください',
-    '配置已重置': '設定をリセットしました',
+    // 新增的提示文本
+    '使用限制': '使用制限',
+    '本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。': 'このツールは現在、画像ベースのPDFの翻訳をサポートしていません。PDFドキュメントがスキャン版または画像版の場合は、翻訳前にOCRツールを使用してテキストベースのPDFに変換してください。',
     
     // 主要功能标题
     '输出路径配置': '出力パス設定',
@@ -542,18 +548,18 @@ export const locales: Locales = {
   },
   
   'ko': {
-    // 공통
+    // 通用
     '保存': '저장',
-    '重置': '재설정',
+    '重置': '초기화',
     '选择': '선택',
     '打开': '열기',
     '刷新': '새로고침',
     '添加变量': '변수 추가',
     '删除': '삭제',
     '可选': '선택사항',
-    '配置保存成功': '구성이 성공적으로 저장되었습니다',
-    '保存失败，请稍后重试': '저장에 실패했습니다. 나중에 다시 시도해주세요',
-    '配置已重置': '구성이 재설정되었습니다',
+    // 新增的提示文本
+    '使用限制': '사용 제한',
+    '本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。': '이 도구는 현재 이미지 기반 PDF의 번역을 지원하지 않습니다. PDF 문서가 스캔본 또는 이미지본인 경우, 번역 전에 OCR 도구를 사용하여 텍스트 기반 PDF로 변환해 주세요.',
     
     // 주요 기능 제목
     '输出路径配置': '출력 경로 구성',
@@ -681,7 +687,7 @@ export const locales: Locales = {
     '选择': 'Seleccionar',
     '打开': 'Abrir',
     '刷新': 'Actualizar',
-    '添加变量': 'Agregar Variable',
+    '添加变量': 'Agregar variable',
     '删除': 'Eliminar',
     '可选': 'Opcional',
     '配置保存成功': 'Configuración guardada exitosamente',
@@ -809,12 +815,12 @@ export const locales: Locales = {
   
   'fr': {
     // Commun
-    '保存': 'Sauvegarder',
+    '保存': 'Enregistrer',
     '重置': 'Réinitialiser',
     '选择': 'Sélectionner',
     '打开': 'Ouvrir',
     '刷新': 'Actualiser',
-    '添加变量': 'Ajouter Variable',
+    '添加变量': 'Ajouter une variable',
     '删除': 'Supprimer',
     '可选': 'Optionnel',
     '配置保存成功': 'Configuration sauvegardée avec succès',

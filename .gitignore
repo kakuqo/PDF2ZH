@@ -39,6 +39,7 @@ yarn.lock
 engine/
 engine-window/
 pdf2zh_next/
+pdf2zh_next_window/
 
 # Node.js
 node_modules/

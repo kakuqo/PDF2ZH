@@ -28,6 +28,7 @@ function extractJsonObjects(text: string) {
     }
     return jsonObjects;
 }
+
 // 第一个对象：保存环境变量名（类似示例代码）
 const providerVars = {
     deepl: {
@@ -176,7 +177,8 @@ export default class Pdf2zhPlugin {
         let pdf2zhPath = "";
         let restorePath = "";
         if (process.platform === 'win32') {
-            pdf2zhPath = path.resolve(__dirname, 'engine', 'build', 'pdf2zh.exe');
+            pdf2zhPath = path.resolve(__dirname, 'pdf2zh_next', 'pdf2zh.exe');
+            restorePath = path.resolve(__dirname, 'pdf2zh_next', 'offline_assets.zip');
         } else {
             pdf2zhPath = path.resolve(__dirname, 'pdf2zh_next', 'pdf2zh');
             restorePath = path.resolve(__dirname, 'pdf2zh_next', 'offline_assets.zip');
@@ -296,16 +298,17 @@ export default class Pdf2zhPlugin {
             // 初始化超时检测
             resetTimeout();
 
-            // 监听标准错误
             this.currentProcess.stdout?.on('data', (data: any) => {
                 // 首先检查是否已取消
                 if (this.isCancelled) {
                     try {
                         // 使用 SIGKILL 信号强制终止进程
                         this.currentProcess.kill('SIGKILL');
+                        console.log('进程已取消，使用 SIGKILL 信号强制终止进程');
                         // 确保进程被终止
                         if (this.currentProcess.pid) {
                             try {
+                                console.log('进程已取消，使用 process.kill 信号强制终止进程');
                                 process.kill(this.currentProcess.pid, 'SIGKILL');
                             } catch (e) {
                                 // 忽略进程已不存在的错误
@@ -332,6 +335,10 @@ export default class Pdf2zhPlugin {
                         percentage: jsonObjects.state == 'Save PDF' ? '100' : Math.round(parseFloat(jsonObjects.overall_progress)).toString(),
                     });
                 }
+            });
+
+            this.currentProcess.stderr?.on('data', (data: any) => {
+                console.log('stderr', data.toString());
             });
 
             this.currentProcess.on('close', async (code: number | null) => {

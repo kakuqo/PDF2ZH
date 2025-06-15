@@ -54,15 +54,22 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
   // 从data中获取服务列表
   useEffect(() => {
     if (pluginConfig) {
-      initServiceList()
+      const list = (pluginConfig as any).serviceList || [{
+        name: 'Google Translate',
+        provider: 'google',
+      }]
+      setServiceList(list.map((item: any) => {
+        return {
+          name: item.name,
+          provider: item.provider,
+          models: item.models?.filter((model: any) => model !== 'default') || []
+        }
+      }))
+      initServiceList(list)
     }
   }, [pluginConfig])
 
-  const initServiceList = async () => {
-    const serviceList = (pluginConfig as any).serviceList || [{
-      name: 'Google Translate',
-      provider: 'google',
-    }]
+  const initServiceList = async (serviceList: ServiceConfig[]) => {
     let ollamaModels = []
     if (serviceList.find((item: any) => item.provider == 'ollama')) {
       ollamaModels = await fetchOllamaModels(serviceList)
@@ -219,8 +226,8 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
         <div className='flex flex-col gap-2'>
           {/* 服务选择 */}
           <label className={cn("block text-sm text-muted-foreground", isDark ? "text-gray-300" : "text-gray-700")}>
-              {t('选择服务')}
-            </label>
+            {t('选择服务')}
+          </label>
           <Select value={currentModel} onValueChange={(value) => {
             const [modelValue, groupValue] = value.split('|');
             selectModel(modelValue, groupValue);
@@ -319,8 +326,11 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
               </ul>
             </div>
           </div>
+          <div className="text-xs text-red-500 mt-2">
+            {t('本工具目前不支持图片版PDF的翻译。如果您的PDF文档是扫描版或图片版，请先使用OCR工具将其转换为文本版PDF后再进行翻译。')}
+          </div>
           {/* 翻译按钮 */}
-          <div className="pt-4">
+          <div className="pt-2">
             <Button
               onClick={handleTranslate}
               disabled={isTranslating || serviceList.length === 0}

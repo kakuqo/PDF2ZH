@@ -1,7 +1,7 @@
 {
   "name": "@pemo-plugins/pdf2zh",
   "displayName": "PDF2ZH",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "PDF2ZH integration plugin",
   "main": "lib/index.ts",
   "scripts": {
