@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { getTranslation } from '../locales'
 import { Plus, RefreshCcw, Trash2 } from 'lucide-react'
+import { commonModels, serviceProviders } from '.'
 
 // 主题上下文
 const ThemeContext = createContext<{
@@ -152,51 +153,41 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
   useEffect(() => {
     console.log(pluginConfig)
     if (pluginConfig) {
-      setConfig(pluginConfig)
+      if (!pluginConfig.serviceList) {
+        applyServiceList().then((newServiceList: any) => {
+          setConfig({ ...pluginConfig, serviceList: [{ name: 'Google', provider: 'google' }, ...newServiceList] })
+        })
+      } else {
+        setConfig(pluginConfig)
+      }
     }
-  }, [pluginConfig])
+  }, [pluginConfig, pluginList])
 
   // 第三个对象：支持的服务商列表配置
-  const serviceProviders = [
-    { value: 'google', plugin: 'GoogleAI', label: 'Google', requiresKey: false },
-    { value: 'bing', plugin: 'MicrosoftAI', label: 'Bing', requiresKey: false },
-    { value: 'deepl', plugin: 'DeepLAI', label: 'DeepL', requiresKey: true },
-    { value: 'ollama', plugin: 'OllamaAI', label: 'Ollama', baseUrl: 'http://localhost:11434', requiresKey: false, requiresModel: true },
-    { value: 'openai', plugin: 'OpenAI', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', requiresKey: true, requiresModel: true },
-    { value: 'zhipu', plugin: 'ZhipuAI', label: 'Zhipu', requiresKey: true, requiresModel: true },
-    { value: 'siliconflow', plugin: 'SiliconflowAI', label: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1', requiresKey: true, requiresModel: true },
-    { value: 'grok', plugin: 'XAI', label: 'Grok', requiresKey: true, requiresModel: true },
-    { value: 'deepseek', plugin: 'DeepSeekAI', label: 'DeepSeek', requiresKey: true, requiresModel: true },
-    { value: 'xinference', plugin: 'XinferenceAI', label: 'Xinference', baseUrl: 'http://localhost:9997', requiresKey: false, requiresModel: true },
-    { value: 'azureopenai', plugin: 'AzureOpenAI', label: 'Azure OpenAI', requiresKey: true, requiresModel: true },
-    { value: 'modelscope', plugin: 'ModelScopeAI', label: 'ModelScope', requiresKey: true, requiresModel: true },
-    { value: 'tencentmechinetranslation', plugin: 'TencentMT', label: 'Tencent MT', requiresKey: true },
-    { value: 'gemini', plugin: 'GeminiAI', label: 'Gemini', requiresKey: true, requiresModel: true },
-    { value: 'azure', plugin: 'AzureAI', label: 'Azure', requiresKey: true },
-    { value: 'anythingllm', plugin: 'AnythingLLM', label: 'AnythingLLM', baseUrl: 'http://localhost:3001', requiresKey: true },
-    { value: 'dify', plugin: 'DifyAI', label: 'Dify', baseUrl: 'http://localhost/v1', requiresKey: true },
-    { value: 'groq', plugin: 'GroqAI', label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', requiresKey: true, requiresModel: true },
-    { value: 'qwenmt', plugin: 'QwenMT', label: 'Qwen MT', requiresKey: true },
-    { value: 'openaicompatible', plugin: 'OpenAICompatible', label: 'OpenAI Compatible', requiresKey: true, requiresModel: true },
-  ]
+  // const serviceProviders = [
+  //   { value: 'google', plugin: 'GoogleAI', label: 'Google', requiresKey: false },
+  //   { value: 'bing', plugin: 'MicrosoftAI', label: 'Bing', requiresKey: false },
+  //   { value: 'deepl', plugin: 'DeepLAI', label: 'DeepL', requiresKey: true },
+  //   { value: 'ollama', plugin: 'OllamaAI', label: 'Ollama', baseUrl: 'http://localhost:11434', requiresKey: false, requiresModel: true },
+  //   { value: 'openai', plugin: 'OpenAI', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', requiresKey: true, requiresModel: true },
+  //   { value: 'zhipu', plugin: 'ZhipuAI', label: 'Zhipu', requiresKey: true, requiresModel: true },
+  //   { value: 'siliconflow', plugin: 'SiliconflowAI', label: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1', requiresKey: true, requiresModel: true },
+  //   { value: 'grok', plugin: 'XAI', label: 'Grok', requiresKey: true, requiresModel: true },
+  //   { value: 'deepseek', plugin: 'DeepSeekAI', label: 'DeepSeek', requiresKey: true, requiresModel: true },
+  //   { value: 'xinference', plugin: 'XinferenceAI', label: 'Xinference', baseUrl: 'http://localhost:9997', requiresKey: false, requiresModel: true },
+  //   { value: 'azureopenai', plugin: 'AzureOpenAI', label: 'Azure OpenAI', requiresKey: true, requiresModel: true },
+  //   { value: 'modelscope', plugin: 'ModelScopeAI', label: 'ModelScope', requiresKey: true, requiresModel: true },
+  //   { value: 'tencentmechinetranslation', plugin: 'TencentMT', label: 'Tencent MT', requiresKey: true },
+  //   { value: 'gemini', plugin: 'GeminiAI', label: 'Gemini', requiresKey: true, requiresModel: true },
+  //   { value: 'azure', plugin: 'AzureAI', label: 'Azure', requiresKey: true },
+  //   { value: 'anythingllm', plugin: 'AnythingLLM', label: 'AnythingLLM', baseUrl: 'http://localhost:3001', requiresKey: true },
+  //   { value: 'dify', plugin: 'DifyAI', label: 'Dify', baseUrl: 'http://localhost/v1', requiresKey: true },
+  //   { value: 'groq', plugin: 'GroqAI', label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', requiresKey: true, requiresModel: true },
+  //   { value: 'qwenmt', plugin: 'QwenMT', label: 'Qwen MT', requiresKey: true },
+  //   { value: 'openaicompatible', plugin: 'OpenAICompatible', label: 'OpenAI Compatible', requiresKey: true, requiresModel: true },
+  // ]
 
-  // 常用模型列表
-  const commonModels = {
-    openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
-    zhipu: ['glm-4-plus', 'glm-4-0520', 'glm-4'],
-    siliconflow: ['deepseek-ai/DeepSeek-V2.5', 'Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Meta-Llama-3.1-70B-Instruct'],
-    grok: ['grok-beta', 'grok-vision-beta', 'grok-2-1212'],
-    deepseek: ['deepseek-chat', 'deepseek-reasoner', 'deepseek-coder'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'],
-    azureopenai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
-    modelscope: ['qwen2.5-72b-instruct', 'llama3.1-70b-instruct', 'deepseek-v2.5'],
-    xinference: ['qwen2.5-72b-instruct', 'llama-3.1-70b-instruct', 'deepseek-v2.5'],
-    tencentmechinetranslation: [],
-    anythingllm: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-70b'],
-    dify: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-70b'],
-    groq: ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
-    openaicompatible: ['gpt-4o', 'gpt-4o-mini', 'claude-3-sonnet'],
-  }
+  
 
   // 获取Ollama模型列表
   const fetchOllamaModels = async () => {
@@ -322,7 +313,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
         }
         return info
       }).filter((service: any) => !!service).concat(config.serviceList || [])
-      setConfig({ ...config, serviceList: newServiceList })
+      return newServiceList
     }
   }
 
@@ -349,8 +340,9 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
   }
 
   // 重置配置
-  const handleResetConfig = () => {
-    setConfig(defaultConfig)
+  const handleResetConfig = async () => {
+    const newServiceList = (await applyServiceList()).filter((service: any) => service.provider !== 'google')
+    setConfig({ ...defaultConfig, serviceList: [{ name: 'Google', provider: 'google' }, ...newServiceList] })
     setCurProvider('google')
     setCurApiKey('')
     setCurBaseUrl('')
@@ -613,7 +605,10 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                     <h4 className={cn("text-sm font-medium", isDark ? "text-gray-300" : "text-gray-700")}>
                       {t('已保存的服务')} ({config.serviceList.length})
                     </h4>
-                    <Button variant="outline" size="sm" onClick={applyServiceList}>
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      const newServiceList = await applyServiceList()
+                      setConfig({ ...config, serviceList: newServiceList })
+                    }}>
                       <Plus className="w-4 h-4" />
                       {t('应用已有服务')}
                     </Button>

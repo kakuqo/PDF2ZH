@@ -6,6 +6,7 @@ import { cn } from '../utils'
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import { getTranslation } from '../locales'
+import { commonModels, serviceProviders } from '.'
 
 // 主题上下文
 const ThemeContext = createContext<{
@@ -29,11 +30,12 @@ export interface Props {
   isDark?: boolean,
   lang?: string,
   translateLangs?: any[],
+  pluginList?: any[],
   preload?: any,
   onTranslate?: (config: any) => Promise<void>
 }
 
-export default function Panel({ className, pluginConfig, translateLangs, isDark, lang, onTranslate }: Props) {
+export default function Panel({ className, pluginConfig, translateLangs, pluginList, preload, isDark, lang, onTranslate }: Props) {
   const t = (key: string) => getTranslation(lang || 'zh', key)
 
   // 状态管理
@@ -53,30 +55,81 @@ export default function Panel({ className, pluginConfig, translateLangs, isDark,
 
   // 从data中获取服务列表
   useEffect(() => {
-    if (pluginConfig) {
-      const list = (pluginConfig as any).serviceList || [{
-        name: 'Google Translate',
-        provider: 'google',
-      }]
-      setServiceList(list.filter((item: any) => item.provider !== 'Ollama').map((item: any) => {
-        return {
-          name: item.name,
-          provider: item.provider,
-          models: item.models?.filter((model: any) => model !== 'default') || []
-        }
-      }))
-      initServiceList(list)
-      setSelectedService(pluginConfig?.provider || 'google')
-      setSelectedModel(pluginConfig?.model || '')
-      if (pluginConfig?.model?.length > 0 && pluginConfig?.provider?.length > 0) {
-        setCurrentModel(`${pluginConfig?.model}|${pluginConfig?.provider}`)
-      } else {
-        setCurrentModel(`''|${pluginConfig?.provider || 'google'}`)
-      }
+    if (pluginConfig && pluginList) {
+      console.log('pluginConfig', pluginConfig)
+      initServiceList()
     }
-  }, [pluginConfig])
+  }, [pluginConfig, pluginList])
 
-  const initServiceList = async (serviceList: ServiceConfig[]) => {
+  const initServiceList = async () => {
+    console.log('pluginConfig', pluginConfig)
+    let list: any[] = []
+    if (pluginConfig.serviceList) {
+      list = pluginConfig.serviceList
+    } else {
+      const defaultList = await applyServiceList()
+      list = [{ name: 'Google Translate', provider: 'google' }, ...defaultList]
+    }
+    // const list = (pluginConfig as any).serviceList || [{
+    //   name: 'Google Translate',
+    //   provider: 'google',
+    // }]
+    setServiceList(list.filter((item: any) => item.provider !== 'Ollama').map((item: any) => {
+      return {
+        name: item.name,
+        provider: item.provider,
+        models: item.models?.filter((model: any) => model !== 'default') || []
+      }
+    }))
+    initOllamaList(list)
+    setSelectedService(pluginConfig?.provider || 'google')
+    setSelectedModel(pluginConfig?.model || '')
+    if (pluginConfig?.model?.length > 0 && pluginConfig?.provider?.length > 0) {
+      setCurrentModel(`${pluginConfig?.model}|${pluginConfig?.provider}`)
+    } else {
+      setCurrentModel(`''|${pluginConfig?.provider || 'google'}`)
+    }
+  }
+
+  const applyServiceList = async () => {
+    console.log(pluginList)
+    if (pluginList) {
+      const { config: configInfo } = await preload?.plugin.getPluginsConfig();
+      console.log(configInfo)
+      const pluginServiceList = pluginList.filter((plugin: any) => {
+        const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
+        if (supportProvider) {
+          const pluginConfig = configInfo[supportProvider.plugin]
+          if (supportProvider.requiresKey && !pluginConfig?.apiKey) {
+            return false
+          }
+          return true
+        }
+        return false
+      })
+      const newServiceList = pluginServiceList.map((plugin: any) => {
+        const pluginConfig = configInfo[plugin.provider.value]
+        const provider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
+        if (!provider) {
+          return null
+        }
+        const models = plugin.models.map((model: any) => model.value) || commonModels[provider?.value as keyof typeof commonModels]
+        const info = {
+          name: provider?.label,
+          provider: provider?.value,
+          apiKey: pluginConfig?.apiKey,
+          baseUrl: pluginConfig?.baseUrl || provider?.baseUrl,
+          models: models
+        }
+        return info
+      }).filter((service: any) => !!service && service.provider !== 'google')
+      return newServiceList
+    } else {
+      return []
+    }
+  }
+
+  const initOllamaList = async (serviceList: ServiceConfig[]) => {
     let ollamaModels = []
     if (serviceList.find((item: any) => item.provider == 'ollama')) {
       ollamaModels = await fetchOllamaModels(serviceList)

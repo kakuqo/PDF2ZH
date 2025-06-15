@@ -1,0 +1,41 @@
+// 第三个对象：支持的服务商列表配置
+export const serviceProviders = [
+    { value: 'google', plugin: 'GoogleAI', label: 'Google', requiresKey: false },
+    { value: 'bing', plugin: 'MicrosoftAI', label: 'Bing', requiresKey: false },
+    { value: 'deepl', plugin: 'DeepLAI', label: 'DeepL', requiresKey: true },
+    { value: 'ollama', plugin: 'OllamaAI', label: 'Ollama', baseUrl: 'http://localhost:11434', requiresKey: false, requiresModel: true },
+    { value: 'openai', plugin: 'OpenAI', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', requiresKey: true, requiresModel: true },
+    { value: 'zhipu', plugin: 'ZhipuAI', label: 'Zhipu', requiresKey: true, requiresModel: true },
+    { value: 'siliconflow', plugin: 'SiliconflowAI', label: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1', requiresKey: true, requiresModel: true },
+    { value: 'grok', plugin: 'XAI', label: 'Grok', requiresKey: true, requiresModel: true },
+    { value: 'deepseek', plugin: 'DeepSeekAI', label: 'DeepSeek', requiresKey: true, requiresModel: true },
+    { value: 'xinference', plugin: 'XinferenceAI', label: 'Xinference', baseUrl: 'http://localhost:9997', requiresKey: false, requiresModel: true },
+    { value: 'azureopenai', plugin: 'AzureOpenAI', label: 'Azure OpenAI', requiresKey: true, requiresModel: true },
+    { value: 'modelscope', plugin: 'ModelScopeAI', label: 'ModelScope', requiresKey: true, requiresModel: true },
+    { value: 'tencentmechinetranslation', plugin: 'TencentMT', label: 'Tencent MT', requiresKey: true },
+    { value: 'gemini', plugin: 'GeminiAI', label: 'Gemini', requiresKey: true, requiresModel: true },
+    { value: 'azure', plugin: 'AzureAI', label: 'Azure', requiresKey: true },
+    { value: 'anythingllm', plugin: 'AnythingLLM', label: 'AnythingLLM', baseUrl: 'http://localhost:3001', requiresKey: true },
+    { value: 'dify', plugin: 'DifyAI', label: 'Dify', baseUrl: 'http://localhost/v1', requiresKey: true },
+    { value: 'groq', plugin: 'GroqAI', label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', requiresKey: true, requiresModel: true },
+    { value: 'qwenmt', plugin: 'QwenMT', label: 'Qwen MT', requiresKey: true },
+    { value: 'openaicompatible', plugin: 'OpenAICompatible', label: 'OpenAI Compatible', requiresKey: true, requiresModel: true },
+]
+
+// 常用模型列表
+export const commonModels = {
+    openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+    zhipu: ['glm-4-plus', 'glm-4-0520', 'glm-4'],
+    siliconflow: ['deepseek-ai/DeepSeek-V2.5', 'Qwen/Qwen2.5-72B-Instruct', 'meta-llama/Meta-Llama-3.1-70B-Instruct'],
+    grok: ['grok-beta', 'grok-vision-beta', 'grok-2-1212'],
+    deepseek: ['deepseek-chat', 'deepseek-reasoner', 'deepseek-coder'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+    azureopenai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+    modelscope: ['qwen2.5-72b-instruct', 'llama3.1-70b-instruct', 'deepseek-v2.5'],
+    xinference: ['qwen2.5-72b-instruct', 'llama-3.1-70b-instruct', 'deepseek-v2.5'],
+    tencentmechinetranslation: [],
+    anythingllm: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-70b'],
+    dify: ['gpt-4o-mini', 'claude-3-haiku', 'llama-3.1-70b'],
+    groq: ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+    openaicompatible: ['gpt-4o', 'gpt-4o-mini', 'claude-3-sonnet'],
+}
