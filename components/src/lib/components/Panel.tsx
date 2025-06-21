@@ -36,7 +36,7 @@ export interface Props {
 }
 
 export default function Panel({ className, pluginConfig, translateLangs, pluginList, preload, isDark, lang, onTranslate }: Props) {
-  const t = (key: string) => getTranslation(lang || 'zh', key)
+  const t = (key: string) => getTranslation(lang || 'en', key)
 
   // 状态管理
   const [targetLang, setTargetLang] = useState('zh_cn')
@@ -64,12 +64,22 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
   const initServiceList = async () => {
     console.log('pluginConfig', pluginConfig)
     let list: any[] = []
-    if (pluginConfig.serviceList) {
+    if (pluginConfig.serviceList?.length) {
       list = pluginConfig.serviceList
     } else {
       const defaultList = await applyServiceList()
       list = [{ name: 'Google Translate', provider: 'google' }, ...defaultList]
     }
+
+    // 根据provider去重，保留第一个出现的provider
+    const uniqueProviders = new Set<string>()
+    list = list.filter((item: any) => {
+      if (uniqueProviders.has(item.provider)) {
+        return false
+      }
+      uniqueProviders.add(item.provider)
+      return true
+    })
     // const list = (pluginConfig as any).serviceList || [{
     //   name: 'Google Translate',
     //   provider: 'google',
@@ -258,6 +268,24 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
         apiKey: 'DEEPSEEK_API_KEY',
         model: 'DEEPSEEK_MODEL',
       },
+      xinference: {
+        model: 'XINFERENCE_MODEL',
+        host: 'XINFERENCE_HOST',
+      },
+      azureopenai: {
+        model: 'AZURE_OPENAI_MODEL',
+        baseUrl: 'AZURE_OPENAI_BASE_URL',
+        apiKey: 'AZURE_OPENAI_API_KEY',
+        apiVersion: 'AZURE_OPENAI_API_VERSION',
+      },
+      modelscope: {
+        model: 'MODELSCOPE_MODEL',
+        apiKey: 'MODELSCOPE_API_KEY',
+      },
+      gemini: {
+        apiKey: 'GEMINI_API_KEY',
+        model: 'GEMINI_MODEL',
+      }
     }
     const vars = providerVars[config.provider]
     let envs: any = {}

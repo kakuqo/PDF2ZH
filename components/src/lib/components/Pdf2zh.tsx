@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from '../utils'
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
@@ -153,13 +154,13 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
   useEffect(() => {
     console.log(pluginConfig)
     if (pluginConfig) {
-      if (!pluginConfig.serviceList) {
-        applyServiceList().then((newServiceList: any) => {
-          setConfig({ ...pluginConfig, serviceList: [{ name: 'Google', provider: 'google' }, ...newServiceList] })
-        })
-      } else {
-        setConfig(pluginConfig)
-      }
+      applyServiceList(pluginConfig.serviceList).then((newServiceList: any) => {
+        const newConfig = { ...pluginConfig, serviceList: [...newServiceList] }
+        if (!pluginConfig.serviceList && updateData) {
+          updateData(newConfig)
+        }
+        setConfig(newConfig)
+      })
     }
   }, [pluginConfig, pluginList])
 
@@ -187,7 +188,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
   //   { value: 'openaicompatible', plugin: 'OpenAICompatible', label: 'OpenAI Compatible', requiresKey: true, requiresModel: true },
   // ]
 
-  
+
 
   // 获取Ollama模型列表
   const fetchOllamaModels = async () => {
@@ -276,14 +277,14 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
     }
   }
 
-  const applyServiceList = async () => {
-    console.log(pluginList)
+  const applyServiceList = async (serviceList: any[]) => {
+    console.log('pluginList', pluginList)
     if (pluginList) {
       const { config: configInfo } = await preload?.plugin.getPluginsConfig();
-      console.log(configInfo)
+      console.log('configInfo', configInfo)
       const pluginServiceList = pluginList.filter((plugin: any) => {
         const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
-        if (supportProvider && !config.serviceList.find((service: any) => service.provider === supportProvider.value)) {
+        if (supportProvider) {
           const pluginConfig = configInfo[supportProvider.plugin]
           if (supportProvider.requiresKey && !pluginConfig?.apiKey) {
             return false
@@ -292,9 +293,11 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
         }
         return false
       })
+      console.log('pluginServiceList', pluginServiceList)
       const newServiceList = pluginServiceList.map((plugin: any) => {
         const pluginConfig = configInfo[plugin.provider.value]
         const provider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
+        console.log('provider', provider)
         if (!provider) {
           return null
         }
@@ -304,15 +307,37 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
           setCurBaseUrl(configInfo?.baseUrl || provider?.baseUrl)
           setCurModels(models)
         }
+        let baseUrl = ''
+        if (pluginConfig?.baseURL) {
+          if (provider?.baseUrl && provider?.baseUrl.indexOf(pluginConfig.baseURL) > -1) {
+            baseUrl = provider?.baseUrl
+          } else {
+            baseUrl = pluginConfig?.baseURL
+          }
+        } else if (provider?.baseUrl) {
+          baseUrl = provider?.baseUrl || ''
+        }
         const info = {
           name: provider?.label,
           provider: provider?.value,
           apiKey: pluginConfig?.apiKey,
-          baseUrl: pluginConfig?.baseUrl || provider?.baseUrl,
+          baseUrl: baseUrl,
           models: models
         }
+        console.log('info', pluginConfig, provider, info)
         return info
-      }).filter((service: any) => !!service).concat(config.serviceList || [])
+      }).filter((service: any) => !!service)
+      if (serviceList.length > 0) {
+        serviceList.forEach((service: any) => {
+          const hasExistIndex = newServiceList.findIndex((item: any) => item.provider === service.provider)
+          if (hasExistIndex == -1) {
+            newServiceList.push(service)
+          }
+        })
+      }
+      if (!newServiceList.find((item: any) => item.provider === 'google')) {
+        newServiceList.push({ name: 'Google', provider: 'google' })
+      }
       return newServiceList
     }
   }
@@ -341,8 +366,8 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
 
   // 重置配置
   const handleResetConfig = async () => {
-    const newServiceList = (await applyServiceList()).filter((service: any) => service.provider !== 'google')
-    setConfig({ ...defaultConfig, serviceList: [{ name: 'Google', provider: 'google' }, ...newServiceList] })
+    const newServiceList = (await applyServiceList(config.serviceList))
+    setConfig({ ...defaultConfig, serviceList: [...newServiceList] })
     setCurProvider('google')
     setCurApiKey('')
     setCurBaseUrl('')
@@ -569,11 +594,13 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                     <SelectValue placeholder={t('选择翻译服务')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {serviceProviders.map((provider) => (
-                      <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
-                      </SelectItem>
-                    ))}
+                    <div className="flex flex-col max-h-[300px] overflow-y-auto">
+                      {serviceProviders.map((provider) => (
+                        <SelectItem key={provider.value} value={provider.value}>
+                          {provider.label}
+                        </SelectItem>
+                      ))}
+                    </div>
                   </SelectContent>
                 </Select>
                 <Button
@@ -606,7 +633,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                       {t('已保存的服务')} ({config.serviceList.length})
                     </h4>
                     <Button variant="outline" size="sm" onClick={async () => {
-                      const newServiceList = await applyServiceList()
+                      const newServiceList = await applyServiceList(config.serviceList)
                       setConfig({ ...config, serviceList: newServiceList })
                     }}>
                       <Plus className="w-4 h-4" />
@@ -665,31 +692,39 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                   </label>
 
                   {/* 模型按钮列表 */}
-                  <div className="flex flex-wrap gap-2">
-                    {/* 添加自定义模型按钮 */}
-                    <button
-                      onClick={() => setShowAddCustomModel(!showAddCustomModel)}
-                      className={cn(
-                        "inline-flex items-center px-3 py-2 rounded-lg border text-sm font-medium transition-all",
-                        showAddCustomModel
-                          ? isDark
-                            ? "bg-blue-900/50 border-blue-600 text-blue-300"
-                            : "bg-blue-50 border-blue-500 text-blue-700"
-                          : isDark
-                            ? "bg-gray-800/50 border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-700/50"
-                            : "bg-white border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
-                      )}
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                      </svg>
-                      {t('添加模型')}
-                    </button>
+                  <div className={cn(
+                    "border rounded-lg",
+                    isDark ? "border-gray-600" : "border-gray-200"
+                  )}>
+                    {/* 添加自定义模型按钮 - 固定在顶部 */}
+                    <div className={cn(
+                      "p-3 border-b",
+                      isDark ? "border-gray-600" : "border-gray-200"
+                    )}>
+                      <button
+                        onClick={() => setShowAddCustomModel(!showAddCustomModel)}
+                        className={cn(
+                          "w-full inline-flex items-center justify-center px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                          showAddCustomModel
+                            ? isDark
+                              ? "bg-blue-900/50 border-blue-600 text-blue-300"
+                              : "bg-blue-50 border-blue-500 text-blue-700"
+                            : isDark
+                              ? "bg-gray-800/50 border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-700/50"
+                              : "bg-white border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+                        )}
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        {t('添加模型')}
+                      </button>
+                    </div>
 
-                    {/* 模型列表 */}
-                    {(() => {
-                      return curModels.map((model: string) => {
-                        return (
+                    {/* 模型列表 - 可滚动区域 */}
+                    <ScrollArea className="h-32">
+                      <div className="p-3 flex flex-wrap gap-2">
+                        {curModels.map((model: string) => (
                           <div key={model} className="relative group">
                             <div
                               className={cn(
@@ -720,9 +755,19 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                               </svg>
                             </button>
                           </div>
-                        )
-                      })
-                    })()}
+                        ))}
+                        
+                        {/* 当没有模型时显示提示 */}
+                        {curModels.length === 0 && (
+                          <div className={cn(
+                            "w-full text-center py-4 text-sm",
+                            isDark ? "text-gray-500" : "text-gray-400"
+                          )}>
+                            {t('暂无模型，请点击上方按钮添加')}
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
                   </div>
 
                   {/* 添加自定义模型输入框 */}
@@ -799,7 +844,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                   </label>
                   <Input
                     type="password"
-                    value={curService?.apiKey || ''}
+                    value={curApiKey || ''}
                     onChange={(e) => setCurApiKey(e.target.value)}
                     placeholder={t('请输入API密钥')}
                     className={cn(
@@ -823,7 +868,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                   </label>
                   <Input
                     type="text"
-                    value={curService?.baseUrl || ''}
+                    value={curBaseUrl || ''}
                     onChange={(e) => setCurBaseUrl(e.target.value)}
                     placeholder={
                       curProvider === 'ollama'
@@ -968,7 +1013,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
           <SettingCard title={t('模型路径信息')}>
             <SettingItem
               title={t('模型路径')}
-              description="./engine"
+              description="./pdf2zh_next"
             >
               <Button
                 variant="outline"
@@ -978,7 +1023,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                     ? "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
                     : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                 )}
-                onClick={() => handleOpenPath('engine')}
+                onClick={() => handleOpenPath('pdf2zh_next')}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />

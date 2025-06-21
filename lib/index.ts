@@ -74,6 +74,10 @@ const providerVars = {
     modelscope: {
         model: 'MODELSCOPE_MODEL',
         apiKey: 'MODELSCOPE_API_KEY',
+    },
+    gemini: {
+      apiKey: 'GEMINI_API_KEY',
+      model: 'GEMINI_MODEL',
     }
 }
 
@@ -123,6 +127,10 @@ const providerCommandVars = {
         model: '--modelscope-model',
         apiKey: '--modelscope-api-key',
     },
+    gemini: {
+        apiKey: '--gemini-api-key',
+        model: '--gemini-model',
+    }
 }
 
 interface translateOptions {
@@ -203,7 +211,7 @@ export default class Pdf2zhPlugin {
                 throw new Error('翻译已被取消');
             }
 
-            console.log('translate', options)
+            // console.log('translate', options)
             // const configJson = this.getConfigJson(options)
 
             // 设置默认超时时间（3分钟无输出则超时）
@@ -239,12 +247,15 @@ export default class Pdf2zhPlugin {
                 '--lang-out', langTo,
                 '--output', outputDir,
                 `--${options.provider}`,
+                '--watermark-output-mode', 'no_watermark'
             ];
+            const translator = options.translators?.find((item: any) => item.name === options.provider);
             let commandsKey = providerCommandVars[options.provider as keyof typeof providerCommandVars];
-            if (commandsKey) {
+            let providerKey = providerVars[options.provider as keyof typeof providerVars];
+            if (commandsKey && translator) {
                 for (const key in commandsKey) {
-                    if (options[key as keyof translateOptions]) {
-                        args.push(commandsKey[key as keyof typeof commandsKey], options[key as keyof translateOptions]);
+                    if (translator.envs[providerKey[key as keyof typeof providerKey]]) {
+                        args.push(commandsKey[key as keyof typeof commandsKey], translator.envs[providerKey[key as keyof typeof providerKey]]);
                     }
                 }
             }
@@ -292,6 +303,8 @@ export default class Pdf2zhPlugin {
             return new Promise<{
                 dualPath: string,
                 monoPath: string,
+                dualPaths?: string[],
+                monoPaths?: string[],
             }>((resolve, reject) => {
                 // 添加调试信息
                 console.log('执行命令:', pdf2zhPath);
@@ -358,6 +371,11 @@ export default class Pdf2zhPlugin {
 
                 currentProcess.stderr?.on('data', (data: any) => {
                     console.log('stderr', data.toString());
+                    const info = data.toString()
+                    if (info.indexOf('pdf2zh: error:') > -1) {
+                        const errorInfo = info.split('pdf2zh: error:')[1]
+                        reject(new Error(errorInfo));
+                    }
                 });
 
                 currentProcess.on('close', async (code: number | null) => {
@@ -370,14 +388,81 @@ export default class Pdf2zhPlugin {
                     console.log('进程退出，退出码:', code);
                     if (code === 0) {
                         console.log('PDF翻译完成');
-                        const baseName = path.basename(options.filePath).replace('.pdf', '');
-                        resolve({
-                            dualPath: path.join(options.outputPath, `${baseName}.${langTo}.dual.pdf`),
-                            monoPath: path.join(options.outputPath, `${baseName}.${langTo}.mono.pdf`),
-                        });
+                        
+                        // 动态获取输出文件夹下的所有文件
+                        try {
+                            const files = fs.readdirSync(options.outputPath);
+                            console.log('输出文件夹文件列表:', files);
+                            
+                            // 重命名PDF文件，移除no_watermark标识
+                            const renamedFiles: string[] = [];
+                            
+                            for (const file of files) {
+                                if (file.toLowerCase().endsWith('.pdf')) {
+                                    const oldPath = path.join(options.outputPath, file);
+                                    let newFileName = file;
+                                    
+                                    // 移除文件名中的 .no_watermark 部分
+                                    if (file.includes('.no_watermark.')) {
+                                        newFileName = file.replace('.no_watermark.', '.');
+                                        
+                                        const newPath = path.join(options.outputPath, newFileName);
+                                        try {
+                                            fs.renameSync(oldPath, newPath);
+                                            console.log(`文件重命名: ${file} -> ${newFileName}`);
+                                            renamedFiles.push(newFileName);
+                                        } catch (renameError) {
+                                            console.error(`重命名文件失败: ${file}`, renameError);
+                                            renamedFiles.push(file); // 保留原文件名
+                                        }
+                                    } else {
+                                        renamedFiles.push(file);
+                                    }
+                                }
+                            }
+                            
+                            console.log('重命名后的文件列表:', renamedFiles);
+                            
+                            // 使用重命名后的PDF文件列表
+                            const pdfFiles = renamedFiles;
+                            
+                            // 检查是否有PDF文件
+                            if (pdfFiles.length === 0) {
+                                reject(new Error('no pdf files found after translation'));
+                                return;
+                            }
+                            
+                            // 根据文件名是否包含"dual"分类
+                            const dualFiles = pdfFiles.filter(file => file.toLowerCase().includes('dual'));
+                            const monoFiles = pdfFiles.filter(file => file.toLowerCase().includes('mono'));
+                            
+                            // 构建完整路径
+                            const dualPaths = dualFiles.map(file => path.join(options.outputPath, file));
+                            const monoPaths = monoFiles.map(file => path.join(options.outputPath, file));
+                            
+                            console.log('双语PDF文件:', dualPaths);
+                            console.log('单语PDF文件:', monoPaths);
+                            
+                            // 检查是否至少有一个有效文件
+                            if (dualPaths.length === 0 && monoPaths.length === 0) {
+                                reject(new Error('generate pdf file error'));
+                                return;
+                            }
+                            
+                            resolve({
+                                dualPath: dualPaths.length > 0 ? dualPaths[0] : '', // 如果有多个dual文件，返回第一个
+                                monoPath: monoPaths.length > 0 ? monoPaths[0] : '', // 如果有多个mono文件，返回第一个
+                                dualPaths, // 返回所有dual文件路径
+                                monoPaths, // 返回所有mono文件路径
+                            });
+                        } catch (error) {
+                            console.error('读取输出文件夹失败:', error);
+                            reject(new Error(`failed to read output directory: ${error instanceof Error ? error.message : String(error)}`));
+                        }
                     } else {
                         const codeMessage = code === null ? '进程被信号终止' : `错误码: ${code}`;
                         console.log('翻译进程异常退出:', codeMessage);
+                        reject(new Error(`pdf2zh 进程退出，${codeMessage}`));
                         // 检查输出文件是否存在
                         // const outputExists = fs.existsSync(options.outputPath);
                         // console.log(`输出文件夹${outputExists ? '存在' : '不存在'}: ${options.outputPath}`);
