@@ -55,16 +55,16 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
 
   // 从data中获取服务列表
   useEffect(() => {
-    if (pluginConfig && pluginList) {
-      console.log('pluginConfig', pluginConfig)
-      initServiceList()
-    }
+    console.log('pluginConfig', pluginConfig)
+    // if (pluginConfig && pluginList) {
+    // }
+    initServiceList()
   }, [pluginConfig, pluginList])
 
   const initServiceList = async () => {
     console.log('pluginConfig', pluginConfig)
     let list: any[] = []
-    if (pluginConfig.serviceList?.length) {
+    if (pluginConfig?.serviceList?.length) {
       list = pluginConfig.serviceList
     } else {
       const defaultList = await applyServiceList()
@@ -140,30 +140,33 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
   }
 
   const initOllamaList = async (serviceList: ServiceConfig[]) => {
-    let ollamaModels = []
-    if (serviceList.find((item: any) => item.provider == 'ollama')) {
-      ollamaModels = await fetchOllamaModels(serviceList)
-    }
-    const list = serviceList.filter((item: any) => {
-      if (item.provider == 'ollama') {
-        return ollamaModels.length > 0
-      }
-      return true
-    }).map((item: any) => {
-      if (item.provider == 'ollama') {
-        return {
-          name: item.name,
-          provider: item.provider,
-          models: ollamaModels
+    const hasOllama = serviceList.find((item: any) => item.provider == 'ollama')
+    if (hasOllama) {
+      fetchOllamaModels(serviceList).then((models: any) => { 
+        if (models.length > 0) {
+          const list = serviceList.filter((item: any) => {
+            if (item.provider == 'ollama') {
+              return models.length > 0
+            }
+            return true
+          }).map((item: any) => {
+            if (item.provider == 'ollama') {
+              return {
+                name: item.name,
+                provider: item.provider,
+                models: models
+              }
+            }
+            return {
+              name: item.name,
+              provider: item.provider,
+              models: item.models?.filter((model: any) => model !== 'default') || []
+            }
+          })
+          setServiceList(list)
         }
-      }
-      return {
-        name: item.name,
-        provider: item.provider,
-        models: item.models?.filter((model: any) => model !== 'default') || []
-      }
-    })
-    setServiceList(list)
+      })
+    }
   }
 
   // 获取Ollama模型列表

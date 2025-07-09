@@ -1,8 +1,15 @@
 {
-  "version": "2.0.2",
+  "version": "2.0.3",
   "version_name": "beta",
   "title": "PDF2ZH",
-  "description": "一个强大的PDF文档翻译插件，支持恢复pdf版式、多种AI服务提供商和多种语言翻译。",
+  "description": "A powerful PDF document translation plugin that supports PDF layout restoration, multiple AI service providers, and multi-language translation.",
+  "descriptionLangs": {
+    "zh": "一个强大的PDF文档翻译插件，支持恢复pdf版式、多种AI服务提供商和多种语言翻译。",
+    "zh_tw": "一個強大的PDF文件翻譯插件，支持恢復PDF版式、多種AI服務提供商和多種語言翻譯。",
+    "en": "A powerful PDF document translation plugin that supports PDF layout restoration, multiple AI service providers, and multi-language translation.",
+    "ja": "PDFレイアウトの復元、複数のAIサービスプロバイダー、多言語翻訳をサポートする強力なPDF文書翻訳プラグイン。",
+    "ko": "PDF 레이아웃 복원, 다중 AI 서비스 제공업체, 다국어 번역을 지원하는 강력한 PDF 문서 번역 플러그인입니다."
+  },
   "pluginId": "PDF2ZH",
   "category": "ai",
   "main": "index.js",

@@ -5,6 +5,7 @@ import Archiver from 'archiver';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
+import axios from 'axios';
 
 const execAsync = promisify(exec);
 
@@ -15,6 +16,49 @@ const __dirname = path.dirname(__filename);
 // 获取项目根目录
 const projectRoot = path.join(__dirname, '..');
 const bucketDomain = 'https://github.com/kakuqo/PDF2ZH/releases/download'
+const fileInfoUrl = "https://plugin-list.pemo.ai/plugins-list";
+
+async function updatePluginList() {
+    try {
+        const fileInfoPath = path.join(projectRoot, 'output', 'fileInfo.json');
+        let fileInfo = JSON.parse(fs.readFileSync(fileInfoPath, 'utf8'));
+        let onlinePluginList = await getPluginList();
+        if (onlinePluginList && onlinePluginList.length) {
+            const index = onlinePluginList.findIndex(m => m.pluginId === fileInfo.pluginId);
+            if (index !== -1) {
+                onlinePluginList[index] = fileInfo;
+            } else {
+                onlinePluginList.push(fileInfo);
+            }
+        }
+        console.log(onlinePluginList);
+        // fs.writeFileSync(fileInfoPath, JSON.stringify(fileInfo, null, 2));
+        // const response = await axios.post(fileInfoUrl, data, {
+        //     headers: { 'Content-Type': 'application/json' },
+        //     httpsAgent: agent
+        // });
+        // return response.data;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+async function getPluginList() {
+    try {
+        const response = await axios.get(fileInfoUrl, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        const res = response.data;
+        if (res && res.success && res.data && res.data.length) {
+            return res.data;
+        }
+        return [];
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
 
 // 根据平台拷贝engine文件夹
 function copyEngineByPlatform(platform) {
@@ -322,3 +366,5 @@ main().catch(err => {
     console.error('打包过程中发生错误:', err);
     process.exit(1);
 }); 
+
+// updatePluginList()

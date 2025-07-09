@@ -147,7 +147,8 @@ interface translateOptions {
     dirPath?: string; // 指定批量翻译目录路径
     onProgress?: (progress: { state: string; percentage: string }) => void,
     timeout?: number // 添加超时选项，单位为毫秒
-    signalId?: string
+    signalId?: string,
+    logger?: any
 }
 
 const langsMap: any = {
@@ -272,6 +273,7 @@ export default class Pdf2zhPlugin {
 
             // 打印所有关键路径
             console.log('翻译参数', JSON.stringify(args))
+            options.logger?.info('translate args', args)
 
             // 确保 pdf2zh 具有执行权限
             try {

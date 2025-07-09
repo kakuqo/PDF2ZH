@@ -153,15 +153,15 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
 
   useEffect(() => {
     console.log(pluginConfig)
-    if (pluginConfig) {
-      applyServiceList(pluginConfig.serviceList).then((newServiceList: any) => {
-        const newConfig = { ...pluginConfig, serviceList: [...newServiceList] }
-        if (!pluginConfig.serviceList && updateData) {
-          updateData(newConfig)
-        }
-        setConfig(newConfig)
-      })
-    }
+    applyServiceList(pluginConfig?.serviceList || []).then((newServiceList: any) => {
+      const newConfig = { ...pluginConfig, serviceList: [...newServiceList] }
+      if (!pluginConfig?.serviceList && updateData) {
+        updateData(newConfig)
+      }
+      setConfig(newConfig)
+    })
+    // if (pluginConfig) {
+    // }
   }, [pluginConfig, pluginList])
 
   // 第三个对象：支持的服务商列表配置
@@ -193,7 +193,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
   // 获取Ollama模型列表
   const fetchOllamaModels = async () => {
     try {
-      const ollamaProvider = config.serviceList?.find(item => item.provider == 'ollama')
+      const ollamaProvider = config?.serviceList?.find(item => item.provider == 'ollama')
       const baseUrl = ollamaProvider?.baseUrl || 'http://localhost:11434'
       const response = await fetch(`${baseUrl}/api/tags`)
       if (response.ok) {
@@ -327,7 +327,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
         console.log('info', pluginConfig, provider, info)
         return info
       }).filter((service: any) => !!service)
-      if (serviceList.length > 0) {
+      if (serviceList?.length > 0) {
         serviceList.forEach((service: any) => {
           const hasExistIndex = newServiceList.findIndex((item: any) => item.provider === service.provider)
           if (hasExistIndex == -1) {
@@ -642,7 +642,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                   </div>
 
                   <div className="space-y-2">
-                    {config.serviceList?.map((service: ServiceConfig) => (
+                    {config?.serviceList?.map((service: ServiceConfig) => (
                       <div key={service.provider} className={cn(
                         "flex items-center justify-between p-3 rounded-lg border",
                         isDark ? "bg-gray-800/50 border-gray-600" : "bg-white border-gray-200"
