@@ -1,13 +1,14 @@
 {
   "name": "@pemo-plugins/pdf2zh",
   "displayName": "PDF2ZH",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "PDF2ZH integration plugin",
   "main": "lib/index.ts",
   "scripts": {
     "tsc-build": "rimraf ./dist && tsc -p lib && copyfiles -u 1 lib/**/*manifest.json lib/**/*.svg lib/**/i18n.json lib/**/*.png dist",
     "build": "rimraf ./dist && tsup && copyfiles -e lib/**/*tsconfig.json -u 1 lib/**/*.json lib/**/*.svg lib/**/i18n.json lib/**/*.png dist",
     "test": "node --loader ts-node/esm lib/test.ts",
+    "update-plugin-list": "node scripts/package.js",
     "package": "npm run build && node scripts/package.js",
     "package:win": "npm run build && node scripts/package.js --platform win",
     "package:mac": "npm run build && node scripts/package.js --platform mac"

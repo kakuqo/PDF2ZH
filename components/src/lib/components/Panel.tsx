@@ -210,7 +210,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
 
     try {
       // 构建翻译配置
-      const { serviceList, ...rest } = pluginConfig
+      const { _, ...rest } = pluginConfig || {}
       const curService = serviceList.find((service: any) => service.provider === selectedService)
       const translateConfig = {
         ...rest,

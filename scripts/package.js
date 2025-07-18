@@ -33,11 +33,10 @@ async function updatePluginList() {
         }
         console.log(onlinePluginList);
         // fs.writeFileSync(fileInfoPath, JSON.stringify(fileInfo, null, 2));
-        // const response = await axios.post(fileInfoUrl, data, {
-        //     headers: { 'Content-Type': 'application/json' },
-        //     httpsAgent: agent
-        // });
-        // return response.data;
+        const response = await axios.post(fileInfoUrl, onlinePluginList, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        return response.data;
     } catch (error) {
         console.error(error);
         return null;
