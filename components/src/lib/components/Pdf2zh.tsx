@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext, useMemo } from 'react'
+import React, { useEffect, useState, createContext, useContext, useMemo, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -150,12 +150,13 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
 
   // 默认提示词
   const defaultPrompt = 'You are a professional, authentic machine translation engine. Only Output the translated text, do not include any other text. Translate the following markdown source text to ${lang_out}. Keep the formula notation {v*} unchanged. Output translation directly without any additional text. Source Text: ${text} Translated Text:'
-
+  const init = useRef(false)
   useEffect(() => {
     console.log(pluginConfig)
     applyServiceList(pluginConfig?.serviceList || []).then((newServiceList: any) => {
       const newConfig = { ...pluginConfig, serviceList: [...newServiceList] }
-      if (!pluginConfig?.serviceList && updateData) {
+      if (!init.current && updateData) {
+        init.current = true
         updateData(newConfig)
       }
       setConfig(newConfig)
@@ -321,6 +322,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
           name: provider?.label,
           provider: provider?.value,
           apiKey: pluginConfig?.apiKey,
+          plugin: plugin.provider.value,
           baseUrl: baseUrl,
           models: models
         }
@@ -336,7 +338,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
         })
       }
       if (!newServiceList.find((item: any) => item.provider === 'google')) {
-        newServiceList.push({ name: 'Google', provider: 'google' })
+        newServiceList.push({ name: 'Google', provider: 'google', plugin: 'GoogleAI'   })
       }
       return newServiceList
     }
@@ -1075,7 +1077,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
           )}
 
           {/* 功能介绍文案 */}
-          <SettingCard>
+          {/* <SettingCard>
             <div className="py-2">
               <div className={cn("text-center space-y-4", isDark ? "text-gray-300" : "text-gray-700")}>
                 <h3 className={cn("text-lg font-medium", isDark ? "text-gray-200" : "text-gray-900")}>
@@ -1110,7 +1112,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                 </div>
               </div>
             </div>
-          </SettingCard>
+          </SettingCard> */}
         </div>
 
         <Toaster />

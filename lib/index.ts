@@ -82,7 +82,7 @@ const providerVars = {
 }
 
 // 第二个对象：保存命令行参数名
-const providerCommandVars = {
+const providerCommandVars: any = {
     deepl: {
         apiKey: '--deepl-auth-key',
     },
@@ -141,6 +141,8 @@ interface translateOptions {
     prompt?: string,
     outputPath: string,
     model?: string,
+    apiKey?: string,
+    baseUrl?: string,
     provider: string,
     translators?: any[]
     compare?: boolean,
@@ -259,6 +261,15 @@ export default class Pdf2zhPlugin {
                         args.push(commandsKey[key as keyof typeof commandsKey], translator.envs[providerKey[key as keyof typeof providerKey]]);
                     }
                 }
+            }
+            if (options.apiKey && providerCommandVars[options.provider as keyof typeof providerCommandVars].apiKey) {
+                args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].apiKey, options.apiKey);
+            }
+            if (options.baseUrl && providerCommandVars[options.provider as keyof typeof providerCommandVars].baseUrl) {
+                args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].baseUrl, options.baseUrl);
+            }
+            if (options.model && providerCommandVars[options.provider as keyof typeof providerCommandVars].model) {
+                args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].model, options.model);
             }
             if (restorePath) {
                 args.push('--restore-offline-assets', restorePath);

@@ -211,7 +211,10 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     try {
       // 构建翻译配置
       const { _, ...rest } = pluginConfig || {}
-      const curService = serviceList.find((service: any) => service.provider === selectedService)
+      let curService = serviceList.find((service: any) => service.name === selectedService)
+      if (!curService) {
+        curService = rest.serviceList.find((service: any) => service.name === selectedService)
+      }
       const translateConfig = {
         ...rest,
         targetLang,
@@ -231,11 +234,11 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
       // 假设通过props传递翻译函数
       if (onTranslate) {
         await onTranslate(translateConfig)
-        toast.success(t('翻译已开始'))
+        // toast.success(t('翻译已开始'))
       }
     } catch (error) {
       console.error('翻译失败:', error)
-      toast.error(t('翻译失败，请稍后重试'))
+      // toast.error(t('翻译失败，请稍后重试'))
     } finally {
       setIsTranslating(false)
     }

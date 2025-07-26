@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 // 获取项目根目录
 const projectRoot = path.join(__dirname, '..');
 const bucketDomain = 'https://github.com/kakuqo/PDF2ZH/releases/download'
-const fileInfoUrl = "https://plugin-list.pemo.ai/plugins-list";
+const fileInfoUrl = "https://plugin-list.pemo.ai/plugins-info";
 
 async function updatePluginList() {
     try {
@@ -361,9 +361,9 @@ async function main() {
 }
 
 // 执行主函数
-main().catch(err => {
-    console.error('打包过程中发生错误:', err);
-    process.exit(1);
-}); 
+// main().catch(err => {
+//     console.error('打包过程中发生错误:', err);
+//     process.exit(1);
+// }); 
 
-// updatePluginList()
+updatePluginList()
