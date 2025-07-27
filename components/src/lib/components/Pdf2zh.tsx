@@ -112,6 +112,7 @@ const SettingCard = ({
 type ServiceConfig = {
   name: string,
   provider: string,
+  plugin: string,
   apiKey?: string,
   baseUrl?: string,
   models?: string[] // 保存所有可用模型
@@ -252,12 +253,17 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
       }
     }
 
-    const serviceName = serviceProviders.find(p => p.value === curProvider)?.label || curProvider
+    const service = serviceProviders.find(p => p.value === curProvider)
+    if (!service) {
+      toast.error(t('服务商不存在'))
+      return
+    }
     const serviceConfig: ServiceConfig = {
-      name: serviceName,
+      name: service?.label || curProvider,
       provider: curProvider,
       apiKey: curApiKey,
       baseUrl: curBaseUrl,
+      plugin: service?.plugin || '',
       models: curModels // 保存所有可用模型
     }
 
@@ -269,76 +275,61 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
       const newServiceList = [...config.serviceList]
       newServiceList[existingServiceIndex] = serviceConfig
       setConfig({ ...config, serviceList: newServiceList })
-      toast.success(t('已更新服务配置：') + serviceName)
+      toast.success(t('已更新服务配置：') + service.label)
     } else {
       // 添加新服务配置
       const newServiceList = [...config.serviceList, serviceConfig]
       setConfig({ ...config, serviceList: newServiceList })
-      toast.success(t('已添加到服务列表：') + serviceName)
+      toast.success(t('已添加到服务列表：') + service.label)
     }
   }
 
+  // pluginList 为系统自带插件   serviceList 为已添加的配置
   const applyServiceList = async (serviceList: any[]) => {
     console.log('pluginList', pluginList)
     if (pluginList) {
       const { config: configInfo } = await preload?.plugin.getPluginsConfig();
       console.log('configInfo', configInfo)
-      const pluginServiceList = pluginList.filter((plugin: any) => {
-        const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
+      const pdf2zhConfig = configInfo['PDF2ZH']
+      const pluginServiceList = pdf2zhConfig?.serviceList || []
+      pluginList.forEach((plugin: any) => {
+        const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.plugin)
         if (supportProvider) {
           const pluginConfig = configInfo[supportProvider.plugin]
-          if (supportProvider.requiresKey && !pluginConfig?.apiKey) {
-            return false
+          if (supportProvider.requiresKey && pluginConfig?.apiKey && !pluginServiceList.find((service: any) => service.provider === supportProvider.value)) {
+            pluginServiceList.push({ ...plugin })
           }
-          return true
         }
-        return false
       })
       console.log('pluginServiceList', pluginServiceList)
       const newServiceList = pluginServiceList.map((plugin: any) => {
-        const pluginConfig = configInfo[plugin.provider.value]
-        const provider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
+        const defaultConfig = configInfo[plugin.plugin]// 系统配置
+        const pluginConfig = pluginServiceList.find((service: any) => service.provider === plugin.provider)// 插件配置
+        const provider = serviceProviders.find((service: any) => service.plugin === plugin.plugin) // 翻译引擎支持配置
         console.log('provider', provider)
         if (!provider) {
           return null
         }
-        const models = plugin.models.map((model: any) => model.value) || commonModels[provider?.value as keyof typeof commonModels]
+        const pluginModels = plugin.models?.filter((model: any) => !!model)
+        const models = pluginModels?.length > 0 ? pluginModels : commonModels[provider?.value as keyof typeof commonModels]
         if (curProvider == provider?.value) {
-          setCurApiKey(configInfo?.apiKey)
-          setCurBaseUrl(configInfo?.baseUrl || provider?.baseUrl)
+          setCurApiKey(pluginConfig?.apiKey || defaultConfig?.apiKey || '')
+          setCurBaseUrl(pluginConfig?.baseUrl || defaultConfig?.baseUrl || provider?.baseUrl || '')
           setCurModels(models)
-        }
-        let baseUrl = ''
-        if (pluginConfig?.baseURL) {
-          if (provider?.baseUrl && provider?.baseUrl.indexOf(pluginConfig.baseURL) > -1) {
-            baseUrl = provider?.baseUrl
-          } else {
-            baseUrl = pluginConfig?.baseURL
-          }
-        } else if (provider?.baseUrl) {
-          baseUrl = provider?.baseUrl || ''
         }
         const info = {
           name: provider?.label,
           provider: provider?.value,
           apiKey: pluginConfig?.apiKey,
-          plugin: plugin.provider.value,
-          baseUrl: baseUrl,
+          plugin: plugin.plugin,
+          baseUrl: pluginConfig?.baseUrl || defaultConfig?.baseUrl || provider?.baseUrl || '',
           models: models
         }
         console.log('info', pluginConfig, provider, info)
         return info
       }).filter((service: any) => !!service)
-      if (serviceList?.length > 0) {
-        serviceList.forEach((service: any) => {
-          const hasExistIndex = newServiceList.findIndex((item: any) => item.provider === service.provider)
-          if (hasExistIndex == -1) {
-            newServiceList.push(service)
-          }
-        })
-      }
       if (!newServiceList.find((item: any) => item.provider === 'google')) {
-        newServiceList.push({ name: 'Google', provider: 'google', plugin: 'GoogleAI'   })
+        newServiceList.push({ name: 'Google', provider: 'google', plugin: 'GoogleAI' })
       }
       return newServiceList
     }
@@ -357,7 +348,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
 
   // 保存配置
   const handleSaveConfig = () => {
-    console.log('保存配置:', config)
+    console.log('保存配置:', config, updateData)
     if (updateData) {
       updateData(config)
       toast.success(t('配置保存成功'))
@@ -583,7 +574,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
             }
             titleExtra={
               <div className="flex items-center space-x-2">
-                <Select
+                {serviceProviders.length > 0 && <Select
                   value={curProvider}
                   onValueChange={(value) => handleProviderChange(value)}
                 >
@@ -595,16 +586,14 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                   )}>
                     <SelectValue placeholder={t('选择翻译服务')} />
                   </SelectTrigger>
-                  <SelectContent>
-                    <div className="flex flex-col max-h-[300px] overflow-y-auto">
-                      {serviceProviders.map((provider) => (
-                        <SelectItem key={provider.value} value={provider.value}>
-                          {provider.label}
-                        </SelectItem>
-                      ))}
-                    </div>
+                  <SelectContent className="bg-background max-h-[400px]">
+                    {serviceProviders.map((provider) => (
+                      <SelectItem key={provider.value} value={provider.value}>
+                        {provider.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
-                </Select>
+                </Select>}
                 <Button
                   variant="outline"
                   size="sm"
@@ -758,7 +747,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
                             </button>
                           </div>
                         ))}
-                        
+
                         {/* 当没有模型时显示提示 */}
                         {curModels.length === 0 && (
                           <div className={cn(

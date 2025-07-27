@@ -10,6 +10,7 @@ export default defineConfig({
   external: ['react', 'react-dom'],
   target: 'node16',
   noExternal: ['tree-kill'],
+  minify: process.env.MINIFY === 'true', // 通过环境变量MINIFY控制是否压缩
   esbuildOptions: (options) => {
     options.jsx = 'automatic'
   }

@@ -1,6 +1,6 @@
 const { calculateFileHash } = require('./index.ts');
 
-const filePath = '../output/PDF2ZH@2.0.4-mac.pemox';
+const filePath = '../output/PDF2ZH@2.0.5-mac.pemox';
 
 calculateFileHash(filePath)
   .then(hash => {

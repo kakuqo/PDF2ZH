@@ -253,8 +253,8 @@ export default class Pdf2zhPlugin {
                 '--watermark-output-mode', 'no_watermark'
             ];
             const translator = options.translators?.find((item: any) => item.name === options.provider);
-            let commandsKey = providerCommandVars[options.provider as keyof typeof providerCommandVars];
-            let providerKey = providerVars[options.provider as keyof typeof providerVars];
+            let commandsKey = providerCommandVars[options.provider as keyof typeof providerCommandVars] || {};
+            let providerKey = providerVars[options.provider as keyof typeof providerVars] || {};
             if (commandsKey && translator) {
                 for (const key in commandsKey) {
                     if (translator.envs[providerKey[key as keyof typeof providerKey]]) {
@@ -262,13 +262,14 @@ export default class Pdf2zhPlugin {
                     }
                 }
             }
-            if (options.apiKey && providerCommandVars[options.provider as keyof typeof providerCommandVars].apiKey) {
-                args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].apiKey, options.apiKey);
+            const providerCommand = providerCommandVars[options.provider as keyof typeof providerCommandVars]
+            if (options.apiKey && !args.includes(providerCommand?.apiKey) && providerCommand?.apiKey) {
+                args.push(providerCommand.apiKey, options.apiKey);
             }
-            if (options.baseUrl && providerCommandVars[options.provider as keyof typeof providerCommandVars].baseUrl) {
-                args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].baseUrl, options.baseUrl);
+            if (options.baseUrl && !args.includes(providerCommand?.baseUrl) && providerCommand?.baseUrl) {
+                args.push(providerCommand.baseUrl, options.baseUrl);
             }
-            if (options.model && providerCommandVars[options.provider as keyof typeof providerCommandVars].model) {
+            if (options.model && !args.includes(providerCommand?.model) && providerCommand?.model) {
                 args.push(providerCommandVars[options.provider as keyof typeof providerCommandVars].model, options.model);
             }
             if (restorePath) {

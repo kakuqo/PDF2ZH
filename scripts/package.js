@@ -361,9 +361,9 @@ async function main() {
 }
 
 // 执行主函数
-// main().catch(err => {
-//     console.error('打包过程中发生错误:', err);
-//     process.exit(1);
-// }); 
+main().catch(err => {
+    console.error('打包过程中发生错误:', err);
+    process.exit(1);
+}); 
 
-updatePluginList()
+// updatePluginList()

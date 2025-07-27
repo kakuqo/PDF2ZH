@@ -19,6 +19,7 @@ export default defineConfig({
   },
   build: {
     cssCodeSplit: true,
+    minify: process.env.MINIFY !== 'false' ? 'terser' : false, // 使用terser作为压缩器
     lib: {
       entry: path.resolve(__dirname, 'src/lib/index.ts'),
       name: 'Pdf2zh',
@@ -36,5 +37,16 @@ export default defineConfig({
         exports: 'named'
       },
     },
+    target: 'es2015',
+    terserOptions: process.env.MINIFY !== 'false' ? {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+      mangle: {
+        keep_fnames: false, // 混淆函数名
+        keep_classnames: false, // 混淆类名
+      },
+    } : undefined,
   },
 })

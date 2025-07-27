@@ -35,6 +35,55 @@ export interface Props {
   onTranslate?: (config: any) => Promise<void>
 }
 
+const providerVars: any = {
+  deepl: {
+    apiKey: 'DEEPL_AUTH_KEY',
+  },
+  ollama: {
+    baseUrl: 'OLLAMA_HOST',
+    model: 'OLLAMA_MODEL',
+  },
+  openai: {
+    baseUrl: 'OPENAI_BASE_URL',
+    apiKey: 'OPENAI_API_KEY',
+    model: 'OPENAI_MODEL',
+  },
+  zhipu: {
+    apiKey: 'ZHIPU_API_KEY',
+    model: 'ZHIPU_MODEL',
+  },
+  silicon: {
+    apiKey: 'SILICON_API_KEY',
+    model: 'SILICON_MODEL',
+  },
+  grok: {
+    apiKey: 'GROK_API_KEY',
+    model: 'GROK_MODEL',
+  },
+  deepseek: {
+    apiKey: 'DEEPSEEK_API_KEY',
+    model: 'DEEPSEEK_MODEL',
+  },
+  xinference: {
+    model: 'XINFERENCE_MODEL',
+    host: 'XINFERENCE_HOST',
+  },
+  azureopenai: {
+    model: 'AZURE_OPENAI_MODEL',
+    baseUrl: 'AZURE_OPENAI_BASE_URL',
+    apiKey: 'AZURE_OPENAI_API_KEY',
+    apiVersion: 'AZURE_OPENAI_API_VERSION',
+  },
+  modelscope: {
+    model: 'MODELSCOPE_MODEL',
+    apiKey: 'MODELSCOPE_API_KEY',
+  },
+  gemini: {
+    apiKey: 'GEMINI_API_KEY',
+    model: 'GEMINI_MODEL',
+  }
+}
+
 export default function Panel({ className, pluginConfig, translateLangs, pluginList, preload, isDark, lang, onTranslate }: Props) {
   const t = (key: string) => getTranslation(lang || 'en', key)
 
@@ -43,13 +92,17 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
   const [sourceLang, setSourceLang] = useState('en')
   const [pageRange, setPageRange] = useState('')
   const [selectedService, setSelectedService] = useState('')
-  const [selectedModel, setSelectedModel] = useState('')
+  const [selectedModel, setSelectedModel] = useState<string | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
   const [currentModel, setCurrentModel] = useState<string>('')
   const [serviceList, setServiceList] = useState<ServiceConfig[]>([])
 
   const selectModel = (model: string, provider: string) => {
-    setSelectedModel(model)
+    if (model == '' || model == "''") {
+      setSelectedModel(null)
+    } else {
+      setSelectedModel(model)
+    }
     setSelectedService(provider)
   }
 
@@ -93,7 +146,11 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     }))
     initOllamaList(list)
     setSelectedService(pluginConfig?.provider || 'google')
-    setSelectedModel(pluginConfig?.model || '')
+    if (pluginConfig?.model == "''") {
+      setSelectedModel(null)
+    } else {
+      setSelectedModel(pluginConfig?.model)
+    }
     if (pluginConfig?.model?.length > 0 && pluginConfig?.provider?.length > 0) {
       setCurrentModel(`${pluginConfig?.model}|${pluginConfig?.provider}`)
     } else {
@@ -142,7 +199,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
   const initOllamaList = async (serviceList: ServiceConfig[]) => {
     const hasOllama = serviceList.find((item: any) => item.provider == 'ollama')
     if (hasOllama) {
-      fetchOllamaModels(serviceList).then((models: any) => { 
+      fetchOllamaModels(serviceList).then((models: any) => {
         if (models.length > 0) {
           const list = serviceList.filter((item: any) => {
             if (item.provider == 'ollama') {
@@ -211,10 +268,9 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     try {
       // 构建翻译配置
       const { _, ...rest } = pluginConfig || {}
-      let curService = serviceList.find((service: any) => service.name === selectedService)
-      if (!curService) {
-        curService = rest.serviceList.find((service: any) => service.name === selectedService)
-      }
+      let curService = serviceList.find((service: any) => service.provider === selectedService)
+      let defaultService = rest.serviceList.find((service: any) => service.provider === selectedService)
+      console.log('curService', curService)
       const translateConfig = {
         ...rest,
         targetLang,
@@ -223,9 +279,10 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
         provider: selectedService,
         model: selectedModel,
         translators: getTranslators({
-          ...curService,
+          ...(curService || {}),
+          provider: selectedService,
           model: selectedModel
-        })
+        }, defaultService)
       }
 
       console.log('开始翻译:', translateConfig)
@@ -244,61 +301,17 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     }
   }
 
-  const getTranslators = (config: any): any[] => {
-    const providerVars: any = {
-      deepl: {
-        apiKey: 'DEEPL_AUTH_KEY',
-      },
-      ollama: {
-        baseUrl: 'OLLAMA_HOST',
-        model: 'OLLAMA_MODEL',
-      },
-      openai: {
-        baseUrl: 'OPENAI_BASE_URL',
-        apiKey: 'OPENAI_API_KEY',
-        model: 'OPENAI_MODEL',
-      },
-      zhipu: {
-        apiKey: 'ZHIPU_API_KEY',
-        model: 'ZHIPU_MODEL',
-      },
-      silicon: {
-        apiKey: 'SILICON_API_KEY',
-        model: 'SILICON_MODEL',
-      },
-      grok: {
-        apiKey: 'GROK_API_KEY',
-        model: 'GROK_MODEL',
-      },
-      deepseek: {
-        apiKey: 'DEEPSEEK_API_KEY',
-        model: 'DEEPSEEK_MODEL',
-      },
-      xinference: {
-        model: 'XINFERENCE_MODEL',
-        host: 'XINFERENCE_HOST',
-      },
-      azureopenai: {
-        model: 'AZURE_OPENAI_MODEL',
-        baseUrl: 'AZURE_OPENAI_BASE_URL',
-        apiKey: 'AZURE_OPENAI_API_KEY',
-        apiVersion: 'AZURE_OPENAI_API_VERSION',
-      },
-      modelscope: {
-        model: 'MODELSCOPE_MODEL',
-        apiKey: 'MODELSCOPE_API_KEY',
-      },
-      gemini: {
-        apiKey: 'GEMINI_API_KEY',
-        model: 'GEMINI_MODEL',
-      }
-    }
+  const getTranslators = (config: any, defaultConfig: any): any[] => {
+
     const vars = providerVars[config.provider]
     let envs: any = {}
     for (const key in vars) {
       if (config[key]) {
         envs[vars[key]] = config[key]
+      } else if (defaultConfig && defaultConfig[key]) {
+        envs[vars[key]] = defaultConfig[key]
       }
+      console.log('set envs', vars[key], envs[vars[key]])
     }
     if (Object.keys(envs).length > 0) {
       return [{
@@ -319,57 +332,57 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
         {/* 主内容区域 */}
         <div className='flex flex-col gap-2'>
           {/* 服务选择 */}
-          <label className={cn("block text-sm text-muted-foreground", isDark ? "text-gray-300" : "text-gray-700")}>
-            {t('选择服务')}
-          </label>
-          <Select value={currentModel} onValueChange={(value) => {
-            console.log('provider', value)
-            const [modelValue, groupValue] = value.split('|');
-            selectModel(modelValue, groupValue);
-            setCurrentModel(value)
-          }}>
-            <SelectTrigger className={`${className}`}>
-              <SelectValue placeholder={t('选择服务')} />
-            </SelectTrigger>
-            <SelectContent>
-              {serviceList.map((provider) => (
-                <SelectGroup key={provider.provider}>
-                  {/* <SelectLabel>{group.provider.label}</SelectLabel> */}
-                  {provider.models?.length ? provider.models.map((model) => (
-                    <SelectItem
-                      className="cursor-pointer pl-2"
-                      key={model}
-                      value={`${model}|${provider.provider}`}
+          {serviceList.length > 0 && <div>
+            <label className={cn("block text-sm text-muted-foreground mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
+              {t('选择服务')}
+            </label>
+            <Select value={currentModel} onValueChange={(value) => {
+              console.log('provider', value)
+              const [modelValue, groupValue] = value.split('|');
+              selectModel(modelValue, groupValue);
+              setCurrentModel(value)
+            }}>
+              <SelectTrigger className={`${className}`}>
+                <SelectValue placeholder={t('选择服务')} />
+              </SelectTrigger>
+              <SelectContent className="bg-background max-h-[400px]">
+                {serviceList.map((provider) => (
+                  <SelectGroup key={provider.provider}>
+                    {/* <SelectLabel>{group.provider.label}</SelectLabel> */}
+                    {provider.models?.length ? provider.models.map((model) => (
+                      <SelectItem
+                        key={model}
+                        value={`${model}|${provider.provider}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-primary py-1 px-2 bg-primary/10 rounded-md">{provider.provider}</span>
+                          {model}
+                        </div>
+                      </SelectItem>
+                    )) : <SelectItem
+                      key={provider.provider}
+                      value={`''|${provider.provider}`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-primary py-1 px-2 bg-primary/10 rounded-md">{provider.provider}</span>
-                        {model}
+                        {provider.name}
                       </div>
-                    </SelectItem>
-                  )) : <SelectItem
-                    className="cursor-pointer pl-2"
-                    key={provider.provider}
-                    value={`''|${provider.provider}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-primary py-1 px-2 bg-primary/10 rounded-md">{provider.provider}</span>
-                      {provider.name}
-                    </div>
-                  </SelectItem>}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+                    </SelectItem>}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>}
           {/* 目标语言选择 */}
           <div>
-            <label className={cn("block text-sm text-muted-foreground", isDark ? "text-gray-300" : "text-gray-700")}>
+            <label className={cn("block text-sm text-muted-foreground mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
               {t('目标语言')}
             </label>
             <Select value={targetLang} onValueChange={setTargetLang}>
               <SelectTrigger>
                 <SelectValue placeholder={t(targetLang)} />
               </SelectTrigger>
-              <SelectContent className="bg-background max-h-[400px] overflow-y-auto">
+              <SelectContent className="bg-background max-h-[400px]">
                 {translateLangs?.map((lang) => (
                   <SelectItem key={lang.value} value={lang.value}>
                     {lang.label}
@@ -380,14 +393,14 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
           </div>
           {/* 源语言选择 */}
           <div>
-            <label className={cn("block text-sm text-muted-foreground", isDark ? "text-gray-300" : "text-gray-700")}>
+            <label className={cn("block text-sm text-muted-foreground mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
               {t('源语言')}
             </label>
             <Select value={sourceLang} onValueChange={setSourceLang}>
               <SelectTrigger>
                 <SelectValue placeholder={t(sourceLang)} />
               </SelectTrigger>
-              <SelectContent className="bg-background max-h-[400px] overflow-y-auto">
+              <SelectContent className="bg-background max-h-[400px]">
                 {translateLangs?.map((lang) => (
                   <SelectItem key={lang.value} value={lang.value}>
                     {lang.label}
@@ -398,7 +411,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
           </div>
           {/* 页面选择 */}
           <div>
-            <label className={cn("block text-sm text-muted-foreground", isDark ? "text-gray-300" : "text-gray-700")}>
+            <label className={cn("block text-sm text-muted-foreground mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
               {t('页面选择')}
             </label>
             <Input

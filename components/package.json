@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "build:minified": "tsc && MINIFY=true vite build",
+    "build:unminified": "tsc && MINIFY=false vite build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
