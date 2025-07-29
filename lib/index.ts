@@ -10,76 +10,78 @@ import treeKill from 'tree-kill';
  * @returns {Array} JSON 对象数组
  */
 function extractJsonObjects(text: string) {
-    const jsonObjects: any = [];
+    const jsonObjects: any[] = [];
     const prefixedJsonRegex = /(?:Progress Event|Event|JSON):\s*(\{[\s\S]*?\})/gi;
-    let match: RegExpExecArray | null = prefixedJsonRegex.exec(text);
-    if (match !== null) {
-        try {
-            const parsed = JSON.parse(match[1]);
-            const isDuplicate = jsonObjects.some(
-                (existing: any) => JSON.stringify(existing) === JSON.stringify(parsed)
-            );
-            if (!isDuplicate) {
-                jsonObjects.push(parsed);
-            }
-        } catch (e) {
-            // 忽略无法解析的匹配
+    let match: RegExpExecArray | null = null;
+    // console.log('extractJsonObjects', text)
+    while ((match = prefixedJsonRegex.exec(text)) !== null) {
+      try {
+        // console.log('match', match)
+        const parsed = JSON.parse(match[1]);
+        const isDuplicate = jsonObjects.some(
+          (existing) => JSON.stringify(existing) === JSON.stringify(parsed)
+        );
+        if (!isDuplicate) {
+          jsonObjects.push(parsed);
         }
+      } catch (e) {
+        // 忽略无法解析的匹配
+      }
     }
     return jsonObjects;
-}
+  }
 
 // 第一个对象：保存环境变量名（类似示例代码）
-const providerVars = {
-    deepl: {
-        apiKey: 'DEEPL_AUTH_KEY',
-    },
-    ollama: {
-        baseUrl: 'OLLAMA_HOST',
-        model: 'OLLAMA_MODEL',
-        numPredict: 'NUM_PREDICT',
-    },
-    openai: {
-        baseUrl: 'OPENAI_BASE_URL',
-        apiKey: 'OPENAI_API_KEY',
-        model: 'OPENAI_MODEL',
-    },
-    zhipu: {
-        apiKey: 'ZHIPU_API_KEY',
-        model: 'ZHIPU_MODEL',
-    },
-    siliconflow: {
-        baseUrl: 'SILICONFLOW_BASE_URL',
-        model: 'SILICONFLOW_MODEL',
-        apiKey: 'SILICONFLOW_API_KEY',
-    },
-    grok: {
-        apiKey: 'GROK_API_KEY',
-        model: 'GROK_MODEL',
-    },
-    deepseek: {
-        apiKey: 'DEEPSEEK_API_KEY',
-        model: 'DEEPSEEK_MODEL',
-    },
-    xinference: {
-        model: 'XINFERENCE_MODEL',
-        host: 'XINFERENCE_HOST',
-    },
-    azureopenai: {
-        model: 'AZURE_OPENAI_MODEL',
-        baseUrl: 'AZURE_OPENAI_BASE_URL',
-        apiKey: 'AZURE_OPENAI_API_KEY',
-        apiVersion: 'AZURE_OPENAI_API_VERSION',
-    },
-    modelscope: {
-        model: 'MODELSCOPE_MODEL',
-        apiKey: 'MODELSCOPE_API_KEY',
-    },
-    gemini: {
-      apiKey: 'GEMINI_API_KEY',
-      model: 'GEMINI_MODEL',
-    }
-}
+// const providerVars = {
+//     deepl: {
+//         apiKey: 'DEEPL_AUTH_KEY',
+//     },
+//     ollama: {
+//         baseUrl: 'OLLAMA_HOST',
+//         model: 'OLLAMA_MODEL',
+//         numPredict: 'NUM_PREDICT',
+//     },
+//     openai: {
+//         baseUrl: 'OPENAI_BASE_URL',
+//         apiKey: 'OPENAI_API_KEY',
+//         model: 'OPENAI_MODEL',
+//     },
+//     zhipu: {
+//         apiKey: 'ZHIPU_API_KEY',
+//         model: 'ZHIPU_MODEL',
+//     },
+//     siliconflow: {
+//         baseUrl: 'SILICONFLOW_BASE_URL',
+//         model: 'SILICONFLOW_MODEL',
+//         apiKey: 'SILICONFLOW_API_KEY',
+//     },
+//     grok: {
+//         apiKey: 'GROK_API_KEY',
+//         model: 'GROK_MODEL',
+//     },
+//     deepseek: {
+//         apiKey: 'DEEPSEEK_API_KEY',
+//         model: 'DEEPSEEK_MODEL',
+//     },
+//     xinference: {
+//         model: 'XINFERENCE_MODEL',
+//         host: 'XINFERENCE_HOST',
+//     },
+//     azureopenai: {
+//         model: 'AZURE_OPENAI_MODEL',
+//         baseUrl: 'AZURE_OPENAI_BASE_URL',
+//         apiKey: 'AZURE_OPENAI_API_KEY',
+//         apiVersion: 'AZURE_OPENAI_API_VERSION',
+//     },
+//     modelscope: {
+//         model: 'MODELSCOPE_MODEL',
+//         apiKey: 'MODELSCOPE_API_KEY',
+//     },
+//     gemini: {
+//       apiKey: 'GEMINI_API_KEY',
+//       model: 'GEMINI_MODEL',
+//     }
+// }
 
 // 第二个对象：保存命令行参数名
 const providerCommandVars: any = {
@@ -130,6 +132,11 @@ const providerCommandVars: any = {
     gemini: {
         apiKey: '--gemini-api-key',
         model: '--gemini-model',
+    },
+    openaicompatible: {
+        model: '--openai-compatible-model',
+        apiKey: '--openai-compatible-api-key',
+        baseUrl: '--openai-compatible-base-url',
     }
 }
 
@@ -144,7 +151,8 @@ interface translateOptions {
     apiKey?: string,
     baseUrl?: string,
     provider: string,
-    translators?: any[]
+    translators?: any[],
+    serviceList?: any[],
     compare?: boolean,
     dirPath?: string; // 指定批量翻译目录路径
     onProgress?: (progress: { state: string; percentage: string }) => void,
@@ -154,7 +162,7 @@ interface translateOptions {
 }
 
 const langsMap: any = {
-    'zh_cn': 'zh-CN',
+    'zh_cn': 'zh',
     'zh_tw': 'zh-TW',
     'yue_cn': 'zh-HK',
 }
@@ -238,27 +246,35 @@ export default class Pdf2zhPlugin {
             fs.mkdirSync(outputDir, { recursive: true });
             let langFrom = langsMap[options.sourceLang] || options.sourceLang || 'en';
             let langTo = langsMap[options.targetLang] || options.targetLang || 'zh';
-            if (langFrom === 'zh-CN') {
-                langFrom = 'zh';
-            }
-            if (langTo === 'zh-CN') {
-                langTo = 'zh';
-            }
+            // if (langFrom === 'zh-CN') {
+            //     langFrom = 'zh';
+            // }
+            // if (langTo === 'zh-CN') {
+            //     langTo = 'zh';
+            // }
             const args = [
                 inputPdf,
+                '--qps', 10,
+                '--pool-max-workers', 10,
+                '--skip-clean',
+                '--skip-scanned-detection',
                 '--lang-in', langFrom,
                 '--lang-out', langTo,
                 '--output', outputDir,
                 `--${options.provider}`,
                 '--watermark-output-mode', 'no_watermark'
             ];
-            const translator = options.translators?.find((item: any) => item.name === options.provider);
+            const translator = options.serviceList?.find((item: any) => item.provider === options.provider);
             let commandsKey = providerCommandVars[options.provider as keyof typeof providerCommandVars] || {};
-            let providerKey = providerVars[options.provider as keyof typeof providerVars] || {};
+            // let providerKey = providerVars[options.provider as keyof typeof providerVars] || {};
             if (commandsKey && translator) {
                 for (const key in commandsKey) {
-                    if (translator.envs[providerKey[key as keyof typeof providerKey]]) {
-                        args.push(commandsKey[key as keyof typeof commandsKey], translator.envs[providerKey[key as keyof typeof providerKey]]);
+                    if (key === 'model') { 
+                        if (options.model) {
+                            args.push(commandsKey[key as keyof typeof commandsKey], options.model);
+                        }
+                    }else if (translator[key]) {
+                        args.push(commandsKey[key as keyof typeof commandsKey], translator[key]);
                     }
                 }
             }
@@ -344,9 +360,9 @@ export default class Pdf2zhPlugin {
                 console.log('进程已启动，PID:', currentProcess.pid);
 
                 // 设置进程启动超时检测
-                const startTimeout = setTimeout(() => {
-                    console.log('进程启动超时，可能已挂起');
-                }, 5000); // 5秒超时
+                // const startTimeout = setTimeout(() => {
+                //     console.log('进程启动超时，可能已挂起');
+                // }, 5000); // 5秒超时
 
                 // 设置输出超时检测函数
                 const resetTimeout = () => {
@@ -368,11 +384,13 @@ export default class Pdf2zhPlugin {
                 resetTimeout();
 
                 currentProcess.stdout?.on('data', (data: any) => {
-                    clearTimeout(startTimeout); // 有输出说明进程正常工作
+                    // clearTimeout(startTimeout); // 有输出说明进程正常工作
                     const output = data.toString();
                     // 重置超时计时器
                     resetTimeout();
+                    console.log('output', output)
                     const jsonArray = extractJsonObjects(output);
+                    // console.log('jsonArray',JSON.stringify(jsonArray, null, 2));
                     if (jsonArray?.length) {
                         console.log('jsonArray', JSON.stringify(jsonArray, null, 2));
                         const jsonObjects = jsonArray[0];
@@ -384,7 +402,7 @@ export default class Pdf2zhPlugin {
                 });
 
                 currentProcess.stderr?.on('data', (data: any) => {
-                    console.log('stderr', data.toString());
+                    // console.log('stderr', data.toString());
                     const info = data.toString()
                     if (info.indexOf('pdf2zh: error:') > -1) {
                         const errorInfo = info.split('pdf2zh: error:')[1]
@@ -396,7 +414,7 @@ export default class Pdf2zhPlugin {
                     // 从进程Map和取消集合中移除
                     this.processMap.delete(processId);
                     this.cancelledProcesses.delete(processId);
-                    clearTimeout(startTimeout);
+                    // clearTimeout(startTimeout);
                     clearTimeout(timeoutId);
                     currentProcess = null;
                     console.log('进程退出，退出码:', code);
@@ -488,7 +506,7 @@ export default class Pdf2zhPlugin {
                     // 从进程Map和取消集合中移除
                     this.processMap.delete(processId);
                     this.cancelledProcesses.delete(processId);
-                    clearTimeout(startTimeout);
+                    // clearTimeout(startTimeout);
                     currentProcess = null;
                     console.log('进程启动错误:', err.message);
                     console.log('错误详情:', err);

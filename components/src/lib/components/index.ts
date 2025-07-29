@@ -8,7 +8,7 @@ export const serviceProviders = [
     { value: 'zhipu', plugin: 'ZhipuAI', label: 'Zhipu', requiresKey: true, requiresModel: true },
     { value: 'siliconflow', plugin: 'SiliconflowAI', label: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1', requiresKey: true, requiresModel: true },
     { value: 'grok', plugin: 'XAI', label: 'Grok', requiresKey: true, requiresModel: true },
-    { value: 'deepseek', plugin: 'DeepSeekAI', label: 'DeepSeek', requiresKey: true, requiresModel: true },
+    { value: 'deepseek', plugin: 'DeepseekAI', label: 'DeepSeek', requiresKey: true, requiresModel: true },
     { value: 'xinference', plugin: 'XinferenceAI', label: 'Xinference', baseUrl: 'http://localhost:9997', requiresKey: false, requiresModel: true },
     { value: 'azureopenai', plugin: 'AzureOpenAI', label: 'Azure OpenAI', requiresKey: true, requiresModel: true },
     { value: 'modelscope', plugin: 'ModelScopeAI', label: 'ModelScope', requiresKey: true, requiresModel: true },

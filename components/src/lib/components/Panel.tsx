@@ -35,54 +35,55 @@ export interface Props {
   onTranslate?: (config: any) => Promise<void>
 }
 
-const providerVars: any = {
-  deepl: {
-    apiKey: 'DEEPL_AUTH_KEY',
-  },
-  ollama: {
-    baseUrl: 'OLLAMA_HOST',
-    model: 'OLLAMA_MODEL',
-  },
-  openai: {
-    baseUrl: 'OPENAI_BASE_URL',
-    apiKey: 'OPENAI_API_KEY',
-    model: 'OPENAI_MODEL',
-  },
-  zhipu: {
-    apiKey: 'ZHIPU_API_KEY',
-    model: 'ZHIPU_MODEL',
-  },
-  silicon: {
-    apiKey: 'SILICON_API_KEY',
-    model: 'SILICON_MODEL',
-  },
-  grok: {
-    apiKey: 'GROK_API_KEY',
-    model: 'GROK_MODEL',
-  },
-  deepseek: {
-    apiKey: 'DEEPSEEK_API_KEY',
-    model: 'DEEPSEEK_MODEL',
-  },
-  xinference: {
-    model: 'XINFERENCE_MODEL',
-    host: 'XINFERENCE_HOST',
-  },
-  azureopenai: {
-    model: 'AZURE_OPENAI_MODEL',
-    baseUrl: 'AZURE_OPENAI_BASE_URL',
-    apiKey: 'AZURE_OPENAI_API_KEY',
-    apiVersion: 'AZURE_OPENAI_API_VERSION',
-  },
-  modelscope: {
-    model: 'MODELSCOPE_MODEL',
-    apiKey: 'MODELSCOPE_API_KEY',
-  },
-  gemini: {
-    apiKey: 'GEMINI_API_KEY',
-    model: 'GEMINI_MODEL',
-  }
-}
+// const providerVars: any = {
+//   deepl: {
+//     apiKey: 'DEEPL_AUTH_KEY',
+//   },
+//   ollama: {
+//     baseUrl: 'OLLAMA_HOST',
+//     model: 'OLLAMA_MODEL',
+//   },
+//   openai: {
+//     baseUrl: 'OPENAI_BASE_URL',
+//     apiKey: 'OPENAI_API_KEY',
+//     model: 'OPENAI_MODEL',
+//   },
+//   zhipu: {
+//     apiKey: 'ZHIPU_API_KEY',
+//     model: 'ZHIPU_MODEL',
+//   },
+//   silicon: {
+//     apiKey: 'SILICON_API_KEY',
+//     model: 'SILICON_MODEL',
+//   },
+//   grok: {
+//     apiKey: 'GROK_API_KEY',
+//     model: 'GROK_MODEL',
+//   },
+//   deepseek: {
+//     apiKey: 'DEEPSEEK_API_KEY',
+//     model: 'DEEPSEEK_MODEL',
+//   },
+//   xinference: {
+//     model: 'XINFERENCE_MODEL',
+//     host: 'XINFERENCE_HOST',
+//   },
+//   azureopenai: {
+//     model: 'AZURE_OPENAI_MODEL',
+//     baseUrl: 'AZURE_OPENAI_BASE_URL',
+//     apiKey: 'AZURE_OPENAI_API_KEY',
+//     apiVersion: 'AZURE_OPENAI_API_VERSION',
+//   },
+//   modelscope: {
+//     model: 'MODELSCOPE_MODEL',
+//     apiKey: 'MODELSCOPE_API_KEY',
+//   },
+//   gemini: {
+//     apiKey: 'GEMINI_API_KEY',
+//     model: 'GEMINI_MODEL',
+//   },
+  
+// }
 
 export default function Panel({ className, pluginConfig, translateLangs, pluginList, preload, isDark, lang, onTranslate }: Props) {
   const t = (key: string) => getTranslation(lang || 'en', key)
@@ -112,7 +113,7 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     // if (pluginConfig && pluginList) {
     // }
     initServiceList()
-  }, [pluginConfig, pluginList])
+  }, [])
 
   const initServiceList = async () => {
     console.log('pluginConfig', pluginConfig)
@@ -278,11 +279,11 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
         pageRange,
         provider: selectedService,
         model: selectedModel,
-        translators: getTranslators({
-          ...(curService || {}),
-          provider: selectedService,
-          model: selectedModel
-        }, defaultService)
+        // translators: getTranslators({
+        //   ...(curService || {}),
+        //   provider: selectedService,
+        //   model: selectedModel
+        // }, defaultService)
       }
 
       console.log('开始翻译:', translateConfig)
@@ -301,27 +302,27 @@ export default function Panel({ className, pluginConfig, translateLangs, pluginL
     }
   }
 
-  const getTranslators = (config: any, defaultConfig: any): any[] => {
+  // const getTranslators = (config: any, defaultConfig: any): any[] => {
 
-    const vars = providerVars[config.provider]
-    let envs: any = {}
-    for (const key in vars) {
-      if (config[key]) {
-        envs[vars[key]] = config[key]
-      } else if (defaultConfig && defaultConfig[key]) {
-        envs[vars[key]] = defaultConfig[key]
-      }
-      console.log('set envs', vars[key], envs[vars[key]])
-    }
-    if (Object.keys(envs).length > 0) {
-      return [{
-        name: config.provider,
-        envs
-      }]
-    } else {
-      return []
-    }
-  }
+  //   const vars = providerVars[config.provider]
+  //   let envs: any = {}
+  //   for (const key in vars) {
+  //     if (config[key]) {
+  //       envs[vars[key]] = config[key]
+  //     } else if (defaultConfig && defaultConfig[key]) {
+  //       envs[vars[key]] = defaultConfig[key]
+  //     }
+  //     console.log('set envs', vars[key], envs[vars[key]])
+  //   }
+  //   if (Object.keys(envs).length > 0) {
+  //     return [{
+  //       name: config.provider,
+  //       envs
+  //     }]
+  //   } else {
+  //     return []
+  //   }
+  // }
 
   return (
     <ThemeContext.Provider value={{ isDark: isDark || false }}>

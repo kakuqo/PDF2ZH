@@ -164,7 +164,7 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
     })
     // if (pluginConfig) {
     // }
-  }, [pluginConfig, pluginList])
+  }, [])
 
   // 第三个对象：支持的服务商列表配置
   // const serviceProviders = [
@@ -293,11 +293,18 @@ export default function Pdf2zh({ className, preload, updateData, pluginConfig, m
       const pdf2zhConfig = configInfo['PDF2ZH']
       const pluginServiceList = pdf2zhConfig?.serviceList || []
       pluginList.forEach((plugin: any) => {
-        const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.plugin)
+        const supportProvider = serviceProviders.find((service: any) => service.plugin === plugin.provider.value)
         if (supportProvider) {
           const pluginConfig = configInfo[supportProvider.plugin]
           if (supportProvider.requiresKey && pluginConfig?.apiKey && !pluginServiceList.find((service: any) => service.provider === supportProvider.value)) {
-            pluginServiceList.push({ ...plugin })
+            pluginServiceList.push({
+              name: supportProvider.label,
+              provider: supportProvider.value,
+              apiKey: pluginConfig?.apiKey,
+              plugin: supportProvider.plugin,
+              baseUrl: pluginConfig?.baseURL || supportProvider?.baseUrl || '',
+              models: plugin.models?.map((model: any) => model.value)
+            })
           }
         }
       })
